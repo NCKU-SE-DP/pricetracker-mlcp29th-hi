@@ -2,13 +2,16 @@
     <nav class="navbar">
         <div class="title"> <RouterLink to="/overview">價格追蹤小幫手</RouterLink></div>
         <ul class="options" v-show="!isSmallScreen || isMenuExpanded" @click="isSmallScreen ? toggleDropdownMenu() : null">
-            <li><RouterLink to="/overview">物價概覽</RouterLink></li>
-            <li><RouterLink to="/trending">物價趨勢</RouterLink></li>
-            <li><RouterLink to="/news">相關新聞</RouterLink></li>
-            <li v-if="!isLoggedIn"><RouterLink to="/login">登入</RouterLink></li>
+            <li><RouterLink to="/overview"><i class="bi bi-speedometer2"></i>物價概覽</RouterLink></li>
+            <li><RouterLink to="/trending"><i class="bi bi-graph-up"></i>物價趨勢</RouterLink></li>
+            <li><RouterLink to="/news"><i class="bi bi-megaphone"></i>相關新聞</RouterLink></li>
+            <li v-if="!isLoggedIn"><RouterLink to="/login"><i class="bi bi-person"></i>登入</RouterLink></li>
             <li v-else @click="logout"><span>Hi, {{getUserName}}! 登出</span></li>
         </ul>
-        <button class="hamburger" @click="toggleDropdownMenu">{{isMenuExpanded ? "&#x2715;" : "&#9776;"}}</button>
+        <button class="hamburger" v-show="isSmallScreen" @click="toggleDropdownMenu">
+            <i v-if="isMenuExpanded" class="bi bi-chevron-up"></i>
+            <i v-else class="bi bi-list"></i>
+        </button>
     </nav>
 </template>
 
@@ -99,9 +102,17 @@ export default {
     font-size: 1.2em;
 }
 
-.navbar li:hover{
+.navbar li:hover {
     cursor: pointer;
     font-weight: bold;
+}
+
+.navbar li i {
+    margin-right: 0.25em;
+}
+
+.navbar li:hover i {
+    -webkit-text-stroke: 0.75px;
 }
 
 .navbar a {
@@ -111,14 +122,9 @@ export default {
 
 .navbar .hamburger {
     font-size: 24px;
-    display: none;
 }
 
 @media screen and (max-width: 768px) {
-    .navbar .hamburger {
-        display: unset;
-    }
-
     .navbar ul {
         box-shadow: 0 5px 5px -5px #000000;
     }
