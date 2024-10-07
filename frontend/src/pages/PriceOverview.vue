@@ -70,6 +70,7 @@ export default {
 .category{
     margin: 1em;
     flex-grow: 1;
+    flex-basis: 45%;
 }
 .subtitle{
     font-weight: normal;
