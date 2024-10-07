@@ -1,13 +1,15 @@
 <template>
     <nav class="navbar">
         <div class="title"> <RouterLink to="/overview">價格追蹤小幫手</RouterLink></div>
-        <ul class="options" v-show="!isSmallScreen || isMenuExpanded" @click="isSmallScreen ? toggleDropdownMenu() : null">
-            <li><RouterLink to="/overview"><i class="bi bi-speedometer2"></i>物價概覽</RouterLink></li>
-            <li><RouterLink to="/trending"><i class="bi bi-graph-up"></i>物價趨勢</RouterLink></li>
-            <li><RouterLink to="/news"><i class="bi bi-megaphone"></i>相關新聞</RouterLink></li>
-            <li v-if="!isLoggedIn"><RouterLink to="/login"><i class="bi bi-person"></i>登入</RouterLink></li>
-            <li v-else @click="logout"><span>Hi, {{getUserName}}! 登出</span></li>
-        </ul>
+        <transition :css="animated">
+            <ul class="options" v-show="!isSmallScreen || isMenuExpanded" @click="isSmallScreen ? toggleDropdownMenu() : null">
+                <li><RouterLink to="/overview"><i class="bi bi-speedometer2"></i>物價概覽</RouterLink></li>
+                <li><RouterLink to="/trending"><i class="bi bi-graph-up"></i>物價趨勢</RouterLink></li>
+                <li><RouterLink to="/news"><i class="bi bi-megaphone"></i>相關新聞</RouterLink></li>
+                <li v-if="!isLoggedIn"><RouterLink to="/login"><i class="bi bi-person"></i>登入</RouterLink></li>
+                <li v-else @click="logout"><span>Hi, {{getUserName}}! 登出</span></li>
+            </ul>
+        </transition>
         <button class="hamburger" v-show="isSmallScreen" @click="toggleDropdownMenu">
             <i v-if="isMenuExpanded" class="bi bi-chevron-up"></i>
             <i v-else class="bi bi-list"></i>
@@ -23,7 +25,8 @@ export default {
     data() {
         return {
             isSmallScreen: false,
-            isMenuExpanded: false
+            isMenuExpanded: false,
+            animated: true
         }
     },
     computed: {
@@ -38,9 +41,13 @@ export default {
     },
     watch: {
         isSmallScreen(isSmall) {
+            this.animated = false;
             if (!isSmall) {
                 this.isMenuExpanded = false;
             }
+            setTimeout(() => {
+                this.animated = true
+            }, 100);
         }
     },
     methods: {
@@ -122,6 +129,18 @@ export default {
 
 .navbar .hamburger {
     font-size: 24px;
+}
+
+.v-enter-active, .v-leave-active {
+    transition: opacity 0.5s;
+}
+
+.v-enter-from, .v-leave-to {
+    opacity: 0;
+}
+
+.v-enter-to, .v-leave-from {
+    opacity: 1;
 }
 
 @media screen and (max-width: 768px) {
