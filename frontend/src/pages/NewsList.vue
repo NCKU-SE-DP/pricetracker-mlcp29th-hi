@@ -85,7 +85,7 @@ export default {
     background-color: white;
     margin-top: 1em;
     border-radius: 1em;
-    padding: 1em 3em;
+    padding: 1em min(3em, 5%);
 }
 .news-item{
     border-bottom: #aaaaaa 1px solid;
@@ -96,12 +96,13 @@ export default {
 .search-bar{
     background-color: white;
     display: inline-flex;
-    border-radius: .5em;
+    border-radius: 1em;
     box-sizing: border-box;
     text-align: start;
     margin-top: 1em;
     padding: 1em;
     width: 80%;
+    text-overflow: ellipsis;
 }
 
 .search-bar input{
@@ -111,6 +112,8 @@ export default {
     box-sizing: border-box;
     flex-grow: 1;
     margin-right: 1em;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .search-bar i{

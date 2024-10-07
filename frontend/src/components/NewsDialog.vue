@@ -48,7 +48,6 @@ export default {
     height: 90%;
     transform: translate(-50%, -50%);
     background: white;
-    padding: 20px;
     border-radius: 8px;
     padding: 3em 4em;
 }
@@ -89,5 +88,25 @@ export default {
     font-size: 2em;
     cursor: pointer;
     color: #888;
+}
+
+@media screen and (max-width: 768px) {
+    .close-btn {
+        font-size: 1.5em;
+    }
+
+    .news-dialog {
+        padding: 2.5em 2em;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .close-btn {
+        font-size: 1em;
+    }
+
+    .news-dialog {
+        padding: 2em 0.5em;
+    }
 }
 </style>
