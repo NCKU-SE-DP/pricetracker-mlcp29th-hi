@@ -21,6 +21,7 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+  overflow-x: auto;
 }
 .navbar{
   z-index: 1000;
@@ -29,5 +30,6 @@ export default {
 }
 .render{
   margin-top: 4.5em;
+  min-width: 320px;
 }
 </style>
