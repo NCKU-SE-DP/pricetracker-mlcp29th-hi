@@ -87,6 +87,7 @@ form > input{
     border: none;
     border-radius: .5em;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 #register{
