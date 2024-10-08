@@ -76,15 +76,6 @@ export default {
 
 
 <style scoped>
-.wrapper {
-    padding: 3em min(5em, max(1.5em, 10%));
-    background: #f3f3f3;
-    min-height: calc(100vh - 4.5em);
-    height: calc(100% - 4.5em);
-    box-sizing: border-box;
-    width: 100%;
-}
-
 .content {
     margin-top: 2em;
     background-color: #fff;
