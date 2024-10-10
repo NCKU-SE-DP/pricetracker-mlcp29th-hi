@@ -104,7 +104,6 @@ export default {
 .texts{
     padding: 1em;
     border-radius: .5em;
-    margin-right: 1em;
     width: 100%;
 }
 
