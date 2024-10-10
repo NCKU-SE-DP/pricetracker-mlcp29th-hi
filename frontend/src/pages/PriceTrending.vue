@@ -9,8 +9,8 @@
                     <option v-for="category in categoryKeys" :key="category" :value="category">{{
                         categoryName(category)}}</option>
                 </select>
-                <select v-model="selectedProduct">
-                    <option disabled value="">請選擇商品</option>
+                <select v-model="selectedProduct" :disabled="selectedCategory === ''">
+                    <option disabled value="">{{this.selectedCategory === '' ? '再選擇商品' : '請選擇商品'}}</option>
                     <option v-for="product in products" :key="product.產品名稱" :value="product">{{ product.產品名稱 }}</option>
                 </select>
             </div>
@@ -76,20 +76,11 @@ export default {
 
 
 <style scoped>
-.wrapper {
-    padding: 3em 5em;
-    background: #f3f3f3;
-    min-height: calc(100vh - 4.5em);
-    height: calc(100% - 4.5em);
-    box-sizing: border-box;
-    width: 100%;
-}
-
 .content {
     margin-top: 2em;
     background-color: #fff;
     border-radius: 1em;
-    padding: 2em;
+    border: 2em solid #fff;
     width: 100%;
 }
 
@@ -97,22 +88,26 @@ export default {
 .selects {
     display: flex;
     justify-content: flex-start;
+    flex-wrap: wrap;
 }
 
 .selects>select {
     padding: .5em;
     font-size: 1.1em;
     margin-right: 1em;
+    margin: 0.25em 1em 0.25em 0;
     border-radius: .5em;
     border: 1px solid #ccc;
     outline: none;
     cursor: pointer;
-    appearance: auto !important;
+    appearance: auto;
+    max-width: 100%;
+    text-overflow: ellipsis;
 }
 
 .visualize > * {
     flex: 1 1 50%;
     box-sizing: border-box;
-    padding: 1em;
+    border: 1em solid #fff;
 }
 </style>

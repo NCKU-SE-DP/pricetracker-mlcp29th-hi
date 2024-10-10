@@ -1,6 +1,8 @@
 <template>
-    <div class="chart-container">
-        <canvas id="trendingChart"></canvas>
+    <div class="horizontal-scrollable">
+        <div class="chart-container">
+            <canvas id="trendingChart"></canvas>
+        </div>
     </div>
 </template>
 
@@ -97,10 +99,15 @@ export default {
 </script>
 
 <style scoped>
+.horizontal-scrollable {
+    width: 100%;
+    overflow-x: auto;
+}
 .chart-container {
     position: relative;
     margin: auto;
     height: 30vh;
-    width: 100wh;
+    width: 100%;
+    min-width: 480px;
 }
 </style>
