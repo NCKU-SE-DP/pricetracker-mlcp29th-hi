@@ -55,13 +55,6 @@ export default {
 </script>
 
 <style scoped>
-.wrapper{
-    padding: 3em 5em;
-    background: #f3f3f3;
-    min-height: calc(100vh - 4.5em);
-    height: calc(100% - 4.5em);
-    box-sizing: border-box;
-}
 .prices{
     display: flex;
     justify-content: space-around;
@@ -70,6 +63,7 @@ export default {
 .category{
     margin: 1em;
     flex-grow: 1;
+    flex-basis: 45%;
 }
 .subtitle{
     font-weight: normal;

@@ -41,14 +41,6 @@ export default {
 </script>
 
 <style scoped>
-.login-page {
-    padding: 3em 5em;
-    background: #f3f3f3;
-    min-height: calc(100vh - 4.5em);
-    height: calc(100% - 4.5em);
-    box-sizing: border-box;
-}
-
 .error{
     color: red;
 }
@@ -87,6 +79,7 @@ form > input{
     border: none;
     border-radius: .5em;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 #register{
