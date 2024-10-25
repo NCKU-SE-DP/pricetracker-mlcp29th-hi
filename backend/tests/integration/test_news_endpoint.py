@@ -4,10 +4,10 @@ from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
 import json
 from jose import jwt
-from main import app
-from main import Base, NewsArticle, User, session_opener, user_news_association_table
-from main import NewsSummaryRequestSchema, SearchRequestSchema
-from main import password_context
+from backend.src.main import app
+from backend.src.main import Base, NewsArticle, User, session_opener, user_news_association_table
+from backend.src.main import NewsSummaryRequestSchema, SearchRequestSchema
+from backend.src.main import password_context
 from unittest.mock import Mock
 
 
