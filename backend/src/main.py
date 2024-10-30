@@ -4,7 +4,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi.middleware.cors import CORSMiddleware
 import itertools
 from sqlalchemy import delete, insert, select
-from sqlalchemy.orm import Session, sessionmaker
 from typing import List, Optional
 import requests
 from fastapi import APIRouter, HTTPException, Query, Depends, status, FastAPI
@@ -15,57 +14,11 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from pydantic import BaseModel, Field, AnyHttpUrl
-from sqlalchemy import (Column, ForeignKey, Integer, String, Table, Text,
-                        create_engine)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
 
-Base = declarative_base()
-
-
-user_news_association_table = Table(
-    "user_news_upvotes",
-    Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
-    Column(
-        "news_articles_id", Integer, ForeignKey("news_articles.id"), primary_key=True
-    ),
-)
+from .database import get_database, get_database_with_auto_persist_changes_disabled
+from .models import NewsArticle, User, user_news_association_table
 
 # from pydantic import BaseModel
-
-
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(String(50), unique=True, nullable=False)
-    hashed_password = Column(String(200), nullable=False)
-    upvoted_news = relationship(
-        "NewsArticle",
-        secondary=user_news_association_table,
-        back_populates="upvoted_by_users",
-    )
-
-
-class NewsArticle(Base):
-    __tablename__ = "news_articles"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    url = Column(String, unique=True, nullable=False)
-    title = Column(String, nullable=False)
-    time = Column(String, nullable=False)
-    content = Column(Text, nullable=False)
-    summary = Column(Text, nullable=False)
-    reason = Column(Text, nullable=False)
-    upvoted_by_users = relationship(
-        "User", secondary=user_news_association_table, back_populates="upvoted_news"
-    )
-
-
-engine = create_engine("sqlite:///news_database.db", echo=True)
-
-Base.metadata.create_all(engine)
-
-Session = sessionmaker(bind=engine)
 
 sentry_sdk.init(
     dsn="https://4001ffe917ccb261aa0e0c34026dc343@o4505702629834752.ingest.us.sentry.io/4507694792704000",
@@ -75,7 +28,6 @@ sentry_sdk.init(
 
 app = FastAPI()
 background_scheduler = BackgroundScheduler()
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 app.add_middleware(
     CORSMiddleware,  # noqa
@@ -133,7 +85,7 @@ def save_news(news):
     :param news:
     :return:
     """
-    session = Session()
+    session = get_database()
     session.add(NewsArticle(
         url=news["url"],
         title=news["title"],
@@ -245,7 +197,7 @@ def download_price_changes_news(is_initial=False):
 
 @app.on_event("startup")
 def start_scheduler():
-    database = SessionLocal()
+    database = get_database_with_auto_persist_changes_disabled()
     if database.query(NewsArticle).count() == 0:
         # should change into simple factory pattern
         download_price_changes_news()
@@ -263,15 +215,6 @@ password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/login")
 
 
-def session_opener():
-    session = Session(bind=engine)
-    try:
-        yield session
-    finally:
-        session.close()
-
-
-
 def is_password_correct(password, existing_password_hash):
     return password_context.verify(password, existing_password_hash)
 
@@ -285,7 +228,7 @@ def retrieve_user_by_credentials(database, username, password):
 
 def retrieve_user_by_access_token(
     token = Depends(oauth2_scheme),
-    database = Depends(session_opener)
+    database = Depends(get_database)
 ):
     claims = jwt.decode(token, key='1892dhianiandowqd0n', algorithms=["HS256"])
     return database.query(User).filter(User.username == claims.get("sub")).first()
@@ -306,7 +249,7 @@ def create_access_token(claims, valid_duration=None):
 
 @app.post("/api/v1/users/login")
 async def login_for_access_token(
-        form_response: OAuth2PasswordRequestForm = Depends(), database: Session = Depends(session_opener)
+        form_response: OAuth2PasswordRequestForm = Depends(), database: Session = Depends(get_database)
 ):
     """login"""
     user = retrieve_user_by_credentials(database, form_response.username, form_response.password)
@@ -320,7 +263,7 @@ class UserRegistrationRequestSchema(BaseModel):
     password: str
 
 @app.post("/api/v1/users/register")
-def register_user(registration: UserRegistrationRequestSchema, database: Session = Depends(session_opener)):
+def register_user(registration: UserRegistrationRequestSchema, database: Session = Depends(get_database)):
     """register user"""
     hashed_password = password_context.hash(registration.password)
     new_user = User(username=registration.username, hashed_password=hashed_password)
@@ -356,7 +299,7 @@ def get_upvote_status(news_id, user_id, database):
 
 
 @app.get("/api/v1/news/news")
-def read_news(database=Depends(session_opener)):
+def read_news(database=Depends(get_database)):
     """
     read news
 
@@ -377,7 +320,7 @@ def read_news(database=Depends(session_opener)):
     "/api/v1/news/user_news"
 )
 def read_user_news(
-        database=Depends(session_opener),
+        database=Depends(get_database),
         user=Depends(retrieve_user_by_access_token)
 ):
     """
@@ -481,7 +424,7 @@ async def summarize_news(
 @app.post("/api/v1/news/{id}/upvote")
 def upvote_news(
         id,
-        database=Depends(session_opener),
+        database=Depends(get_database),
         user=Depends(retrieve_user_by_access_token),
 ):
     message = toggle_upvote(id, user.id, database)
