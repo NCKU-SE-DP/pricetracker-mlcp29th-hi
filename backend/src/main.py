@@ -7,8 +7,6 @@ import requests
 from fastapi import APIRouter, HTTPException, Query, Depends, status, FastAPI
 import os
 
-from pydantic import BaseModel, Field, AnyHttpUrl
-
 from .database import get_database_with_auto_persist_changes_disabled
 from .dependencies import DatabaseSession
 from .models import NewsArticle
@@ -16,6 +14,7 @@ from .user.dependencies import CurrentLoggedInUser
 from .user.router import router as user_api_router
 
 from .news import service as news_service
+from .news.schemas import NewsSummaryRequestSchema, SearchRequestSchema
 
 # from pydantic import BaseModel
 
@@ -101,8 +100,6 @@ def read_user_news(database: DatabaseSession, user: CurrentLoggedInUser):
         )
     return news_list_adding_upvote_status
 
-class SearchRequestSchema(BaseModel):
-    prompt: str
 
 @app.post("/api/v1/news/search_news")
 async def search_news(search_query: SearchRequestSchema):
@@ -151,8 +148,6 @@ async def search_news(search_query: SearchRequestSchema):
             print(e)
     return sorted(news_list, key=lambda x: x["time"], reverse=True)
 
-class NewsSummaryRequestSchema(BaseModel):
-    content: str
 
 @app.post("/api/v1/news/news_summary")
 async def summarize_news(
