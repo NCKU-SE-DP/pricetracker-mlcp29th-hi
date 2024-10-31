@@ -8,16 +8,15 @@ from typing import List, Optional
 import requests
 from fastapi import APIRouter, HTTPException, Query, Depends, status, FastAPI
 import os
-from datetime import datetime, timedelta
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+from datetime import timedelta
+from fastapi.security import OAuth2PasswordRequestForm
 
 from pydantic import BaseModel, Field, AnyHttpUrl
 
 from .database import get_database, get_database_with_auto_persist_changes_disabled
 from .dependencies import DatabaseSession
 from .models import NewsArticle, User, user_news_association_table
+from .user.service import password_context, retrieve_user_by_access_token, retrieve_user_by_credentials, create_access_token
 
 # from pydantic import BaseModel
 
@@ -210,39 +209,6 @@ def start_scheduler():
 @app.on_event("shutdown")
 def shutdown_scheduler():
     background_scheduler.shutdown()
-
-
-password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/login")
-
-
-def is_password_correct(password, existing_password_hash):
-    return password_context.verify(password, existing_password_hash)
-
-
-def retrieve_user_by_credentials(database, username, password):
-    user = database.query(User).filter(User.username == username).first()
-    if not is_password_correct(password, user.hashed_password):
-        return False
-    return user
-
-
-def retrieve_user_by_access_token(database: DatabaseSession, token = Depends(oauth2_scheme)):
-    claims = jwt.decode(token, key='1892dhianiandowqd0n', algorithms=["HS256"])
-    return database.query(User).filter(User.username == claims.get("sub")).first()
-
-
-def create_access_token(claims, valid_duration=None):
-    """create access token"""
-    claims = claims.copy()
-    if valid_duration:
-        expiration_time = datetime.utcnow() + valid_duration
-    else:
-        expiration_time = datetime.utcnow() + timedelta(minutes=15)
-    claims.update({"exp": expiration_time})
-    print(claims)
-    token = jwt.encode(claims, key='1892dhianiandowqd0n', algorithm="HS256")
-    return token
 
 
 @app.post("/api/v1/users/login")
