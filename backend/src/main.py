@@ -17,6 +17,7 @@ from .database import get_database, get_database_with_auto_persist_changes_disab
 from .dependencies import DatabaseSession
 from .models import NewsArticle, User, user_news_association_table
 from .user.dependencies import CurrentLoggedInUser
+from .user.schemas import UserRegistrationRequestSchema
 from .user.service import hash_password, retrieve_user_by_credentials, create_access_token
 
 # from pydantic import BaseModel
@@ -223,10 +224,6 @@ async def login_for_access_token(
         claims={"sub": str(user.username)}, valid_duration=timedelta(minutes=30)
     )
     return {"access_token": access_token, "token_type": "bearer"}
-
-class UserRegistrationRequestSchema(BaseModel):
-    username: str
-    password: str
 
 @app.post("/api/v1/users/register")
 def register_user(registration: UserRegistrationRequestSchema, database: DatabaseSession):
