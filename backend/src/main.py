@@ -8,17 +8,14 @@ from typing import List, Optional
 import requests
 from fastapi import APIRouter, HTTPException, Query, Depends, status, FastAPI
 import os
-from datetime import timedelta
-from fastapi.security import OAuth2PasswordRequestForm
 
 from pydantic import BaseModel, Field, AnyHttpUrl
 
 from .database import get_database, get_database_with_auto_persist_changes_disabled
 from .dependencies import DatabaseSession
-from .models import NewsArticle, User, user_news_association_table
+from .models import NewsArticle, user_news_association_table
 from .user.dependencies import CurrentLoggedInUser
-from .user.schemas import UserRegistrationRequestSchema
-from .user.service import hash_password, retrieve_user_by_credentials, create_access_token
+from .user.router import router as user_api_router
 
 # from pydantic import BaseModel
 
@@ -213,34 +210,6 @@ def shutdown_scheduler():
     background_scheduler.shutdown()
 
 
-@app.post("/api/v1/users/login")
-async def login_for_access_token(
-        database: DatabaseSession,
-        form_response: OAuth2PasswordRequestForm = Depends()
-):
-    """login"""
-    user = retrieve_user_by_credentials(database, form_response.username, form_response.password)
-    access_token = create_access_token(
-        claims={"sub": str(user.username)}, valid_duration=timedelta(minutes=30)
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@app.post("/api/v1/users/register")
-def register_user(registration: UserRegistrationRequestSchema, database: DatabaseSession):
-    """register user"""
-    hashed_password = hash_password(registration.password)
-    new_user = User(username=registration.username, hashed_password=hashed_password)
-    database.add(new_user)
-    database.commit()
-    database.refresh(new_user)
-    return new_user
-
-
-@app.get("/api/v1/users/me")
-def read_users_me(user: CurrentLoggedInUser):
-    return {"username": user.username}
-
-
 _news_id_counter = itertools.count(start=1000000)
 
 
@@ -357,7 +326,8 @@ class NewsSummaryRequestSchema(BaseModel):
     content: str
 
 @app.post("/api/v1/news/news_summary")
-async def summarize_news(news: NewsSummaryRequestSchema, user: CurrentLoggedInUser):
+async def summarize_news(
+        news: NewsSummaryRequestSchema, user: CurrentLoggedInUser):
     news_summary = {}
     messages = [
         {
@@ -426,3 +396,5 @@ def read_necessities_prices(
         "https://opendata.ey.gov.tw/api/ConsumerProtection/NecessitiesPrice",
         params={"CategoryName": category, "Name": commodity},
     ).json()
+
+app.include_router(user_api_router)
