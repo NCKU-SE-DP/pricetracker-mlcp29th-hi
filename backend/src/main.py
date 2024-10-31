@@ -2,8 +2,7 @@ import sentry_sdk
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
-import requests
-from fastapi import APIRouter, HTTPException, Query, status, FastAPI
+from fastapi import APIRouter, HTTPException, status, FastAPI
 import os
 
 from .database import get_database, get_database_with_auto_persist_changes_disabled
@@ -12,6 +11,8 @@ from .user.router import router as user_api_router
 
 from .news import service as news_service
 from .news.router import router as news_api_router
+
+from .price.router import router as price_api_router
 
 # from pydantic import BaseModel
 
@@ -33,9 +34,6 @@ app.add_middleware(
 )
 
 import os
-
-
-import requests
 
 @app.on_event("startup")
 def start_scheduler():
@@ -59,14 +57,6 @@ def shutdown_scheduler():
     background_scheduler.shutdown()
 
 
-@app.get("/api/v1/prices/necessities-price")
-def read_necessities_prices(
-        category=Query(None), commodity=Query(None)
-):
-    return requests.get(
-        "https://opendata.ey.gov.tw/api/ConsumerProtection/NecessitiesPrice",
-        params={"CategoryName": category, "Name": commodity},
-    ).json()
-
 app.include_router(user_api_router)
 app.include_router(news_api_router)
+app.include_router(price_api_router)
