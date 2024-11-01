@@ -5,10 +5,11 @@ from jose import jwt
 from passlib.context import CryptContext
 from src.dependencies import DatabaseSession
 from src.models import User
+from .config import configuration
 
 
-_password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/login")
+_password_context = CryptContext(schemes=[configuration.password_hashing_algorithm], deprecated=["auto"])
+_oauth2_scheme = OAuth2PasswordBearer(tokenUrl=configuration.access_token_url)
 
 
 def hash_password(plaintext: str) -> str:
@@ -30,7 +31,7 @@ def retrieve_user_by_access_token(
         database: DatabaseSession,
         token = Depends(_oauth2_scheme)
 ):
-    claims = jwt.decode(token, key='1892dhianiandowqd0n', algorithms=["HS256"])
+    claims = jwt.decode(token, key=configuration.access_token_secret_key, algorithms=[configuration.access_token_algorithm])
     return database.query(User).filter(User.username == claims.get("sub")).first()
 
 
@@ -40,7 +41,7 @@ def create_access_token(claims, valid_duration=None):
     if valid_duration:
         expiration_time = datetime.utcnow() + valid_duration
     else:
-        expiration_time = datetime.utcnow() + timedelta(minutes=15)
+        expiration_time = datetime.utcnow() + timedelta(minutes=configuration.access_token_valid_duration)
     claims.update({"exp": expiration_time})
-    token = jwt.encode(claims, key='1892dhianiandowqd0n', algorithm="HS256")
+    token = jwt.encode(claims, key=configuration.access_token_secret_key, algorithm=configuration.access_token_algorithm)
     return token
