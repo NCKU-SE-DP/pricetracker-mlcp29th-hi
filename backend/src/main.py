@@ -5,6 +5,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, status, FastAPI
 import os
 
+from .config import configuration
 from .database import get_database, get_database_with_auto_persist_changes_disabled
 from .models import NewsArticle
 from .user.router import router as user_api_router
@@ -17,9 +18,9 @@ from .price.router import router as price_api_router
 # from pydantic import BaseModel
 
 sentry_sdk.init(
-    dsn="https://4001ffe917ccb261aa0e0c34026dc343@o4505702629834752.ingest.us.sentry.io/4507694792704000",
-    traces_sample_rate=1.0,
-    profiles_sample_rate=1.0,
+    dsn=configuration.sentry_dsn,
+    traces_sample_rate=configuration.sentry_traces_sample_rate,
+    profiles_sample_rate=configuration.sentry_profiles_sample_rate,
 )
 
 app = FastAPI()
@@ -27,10 +28,10 @@ background_scheduler = BackgroundScheduler()
 
 app.add_middleware(
     CORSMiddleware,  # noqa
-    allow_origins=["http://localhost:8080"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=configuration.cors_allow_origins,
+    allow_credentials=configuration.cors_allow_credentials,
+    allow_methods=configuration.cors_allow_methods,
+    allow_headers=configuration.cors_allow_headers,
 )
 
 import os
