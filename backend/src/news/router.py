@@ -7,6 +7,7 @@ from src.dependencies import DatabaseSession
 from src.models import NewsArticle
 from src.user.dependencies import CurrentLoggedInUser
 from . import service
+from .config import configuration
 from .schemas import NewsSummaryRequestSchema, SearchRequestSchema
 
 router = APIRouter(prefix="/api/v1/news")
@@ -64,8 +65,8 @@ async def search_news(search_query: SearchRequestSchema):
         {"role": "user", "content": f"{prompt}"},
     ]
 
-    completion = OpenAI(api_key="xxx").chat.completions.create(
-        model="gpt-3.5-turbo",
+    completion = OpenAI(api_key=configuration.open_ai_api_key).chat.completions.create(
+        model=configuration.open_ai_model,
         messages=messages,
     )
     keywords = completion.choices[0].message.content
@@ -111,8 +112,8 @@ async def summarize_news(news: NewsSummaryRequestSchema, user: CurrentLoggedInUs
         {"role": "user", "content": f"{news.content}"},
     ]
 
-    completion = OpenAI(api_key="xxx").chat.completions.create(
-        model="gpt-3.5-turbo",
+    completion = OpenAI(api_key=configuration.open_ai_api_key).chat.completions.create(
+        model=configuration.open_ai_model,
         messages=messages,
     )
     content = completion.choices[0].message.content

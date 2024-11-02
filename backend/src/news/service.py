@@ -6,6 +6,7 @@ import requests
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 from urllib.parse import quote
+from .config import configuration
 from ..database import get_database
 from ..models import NewsArticle, user_news_association_table
 
@@ -52,7 +53,7 @@ def fetch_news_snapshots(search_term, is_initial=False):
                 "channelId": 2,
                 "type": "searchword",
             }
-            response = requests.get("https://udn.com/api/more", params=parameters)
+            response = requests.get(configuration.news_snapshot_api_url, params=parameters)
             snapshots_by_page.append(response.json()["lists"])
 
         for snaptshots in snapshots_by_page:
@@ -64,7 +65,7 @@ def fetch_news_snapshots(search_term, is_initial=False):
             "channelId": 2,
             "type": "searchword",
         }
-        response = requests.get("https://udn.com/api/more", params=parameters)
+        response = requests.get(configuration.news_snapshot_api_url, params=parameters)
 
         news_snapshots = response.json()["lists"]
     return news_snapshots
@@ -86,8 +87,8 @@ def download_price_changes_news(is_initial=False):
             },
             {"role": "user", "content": f"{title}"},
         ]
-        completion = OpenAI(api_key="xxx").chat.completions.create(
-            model="gpt-3.5-turbo",
+        completion = OpenAI(api_key=configuration.open_ai_api_key).chat.completions.create(
+            model=configuration.open_ai_model,
             messages=messages,
         )
         relevance = completion.choices[0].message.content
@@ -119,8 +120,8 @@ def download_price_changes_news(is_initial=False):
                 {"role": "user", "content": " ".join(news["content"])},
             ]
 
-            completion = OpenAI(api_key="xxx").chat.completions.create(
-                model="gpt-3.5-turbo",
+            completion = OpenAI(api_key=configuration.open_ai_api_key).chat.completions.create(
+                model=configuration.open_ai_model,
                 messages=messages,
             )
             summary = completion.choices[0].message.content
@@ -181,8 +182,8 @@ def does_news_exist(news_id, database: Session):
 #         {"role": "user", "content": f"{content}"},
 #     ]
 #
-#     completion = OpenAI(api_key="xxx").chat.completions.create(
-#         model="gpt-3.5-turbo",
+#     completion = OpenAI(api_key=configuration.open_ai_api_key).chat.completions.create(
+#         model=configuration.open_ai_model,
 #         messages=m,
 #     )
 #     return completion.choices[0].message.content
@@ -197,8 +198,8 @@ def does_news_exist(news_id, database: Session):
 #         {"role": "user", "content": f"{content}"},
 #     ]
 #
-#     completion = OpenAI(api_key="xxx").chat.completions.create(
-#         model="gpt-3.5-turbo",
+#     completion = OpenAI(api_key=configuration.open_ai_api_key).chat.completions.create(
+#         model=configuration.open_ai_model,
 #         messages=m,
 #     )
 #     return completion.choices[0].message.content
