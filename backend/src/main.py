@@ -16,6 +16,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, Field, AnyHttpUrl
 
 from .database import get_database, get_database_with_auto_persist_changes_disabled
+from .dependencies import DatabaseSession
 from .models import NewsArticle, User, user_news_association_table
 
 # from pydantic import BaseModel
@@ -226,10 +227,7 @@ def retrieve_user_by_credentials(database, username, password):
     return user
 
 
-def retrieve_user_by_access_token(
-    token = Depends(oauth2_scheme),
-    database = Depends(get_database)
-):
+def retrieve_user_by_access_token(database: DatabaseSession, token = Depends(oauth2_scheme)):
     claims = jwt.decode(token, key='1892dhianiandowqd0n', algorithms=["HS256"])
     return database.query(User).filter(User.username == claims.get("sub")).first()
 
@@ -249,7 +247,8 @@ def create_access_token(claims, valid_duration=None):
 
 @app.post("/api/v1/users/login")
 async def login_for_access_token(
-        form_response: OAuth2PasswordRequestForm = Depends(), database: Session = Depends(get_database)
+        database: DatabaseSession,
+        form_response: OAuth2PasswordRequestForm = Depends()
 ):
     """login"""
     user = retrieve_user_by_credentials(database, form_response.username, form_response.password)
@@ -263,7 +262,7 @@ class UserRegistrationRequestSchema(BaseModel):
     password: str
 
 @app.post("/api/v1/users/register")
-def register_user(registration: UserRegistrationRequestSchema, database: Session = Depends(get_database)):
+def register_user(registration: UserRegistrationRequestSchema, database: DatabaseSession):
     """register user"""
     hashed_password = password_context.hash(registration.password)
     new_user = User(username=registration.username, hashed_password=hashed_password)
@@ -299,7 +298,7 @@ def get_upvote_status(news_id, user_id, database):
 
 
 @app.get("/api/v1/news/news")
-def read_news(database=Depends(get_database)):
+def read_news(database: DatabaseSession):
     """
     read news
 
@@ -320,7 +319,7 @@ def read_news(database=Depends(get_database)):
     "/api/v1/news/user_news"
 )
 def read_user_news(
-        database=Depends(get_database),
+        database: DatabaseSession,
         user=Depends(retrieve_user_by_access_token)
 ):
     """
@@ -424,7 +423,7 @@ async def summarize_news(
 @app.post("/api/v1/news/{id}/upvote")
 def upvote_news(
         id,
-        database=Depends(get_database),
+        database: DatabaseSession,
         user=Depends(retrieve_user_by_access_token),
 ):
     message = toggle_upvote(id, user.id, database)
