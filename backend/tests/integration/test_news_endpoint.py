@@ -8,7 +8,7 @@ from backend.src.database import get_database
 from backend.src.main import app
 from backend.src.main import Base, NewsArticle, User, user_news_association_table
 from backend.src.main import NewsSummaryRequestSchema, SearchRequestSchema
-from backend.src.main import password_context
+from backend.src.user import service as user_service
 from unittest.mock import Mock
 
 
@@ -39,7 +39,7 @@ def clear_users():
 
 @pytest.fixture(scope="module")
 def test_user(clear_users):
-    hashed_password = password_context.hash("testpassword")
+    hashed_password = user_service.hash_password("testpassword")
 
     with next(override_session_opener()) as db:
         user = User(username="testuser", hashed_password=hashed_password)

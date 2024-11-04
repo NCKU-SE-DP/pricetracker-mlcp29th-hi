@@ -7,12 +7,16 @@ from src.dependencies import DatabaseSession
 from src.models import User
 
 
-password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/login")
+_password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/login")
+
+
+def hash_password(plaintext: str) -> str:
+    return _password_context.hash(plaintext)
 
 
 def is_password_correct(password, existing_password_hash):
-    return password_context.verify(password, existing_password_hash)
+    return _password_context.verify(password, existing_password_hash)
 
 
 def retrieve_user_by_credentials(database, username, password):
@@ -22,7 +26,10 @@ def retrieve_user_by_credentials(database, username, password):
     return user
 
 
-def retrieve_user_by_access_token(database: DatabaseSession, token = Depends(oauth2_scheme)):
+def retrieve_user_by_access_token(
+        database: DatabaseSession,
+        token = Depends(_oauth2_scheme)
+):
     claims = jwt.decode(token, key='1892dhianiandowqd0n', algorithms=["HS256"])
     return database.query(User).filter(User.username == claims.get("sub")).first()
 

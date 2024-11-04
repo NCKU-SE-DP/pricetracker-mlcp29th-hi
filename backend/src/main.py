@@ -17,7 +17,7 @@ from .database import get_database, get_database_with_auto_persist_changes_disab
 from .dependencies import DatabaseSession
 from .models import NewsArticle, User, user_news_association_table
 from .user.dependencies import CurrentLoggedInUser
-from .user.service import password_context, retrieve_user_by_credentials, create_access_token
+from .user.service import hash_password, retrieve_user_by_credentials, create_access_token
 
 # from pydantic import BaseModel
 
@@ -231,7 +231,7 @@ class UserRegistrationRequestSchema(BaseModel):
 @app.post("/api/v1/users/register")
 def register_user(registration: UserRegistrationRequestSchema, database: DatabaseSession):
     """register user"""
-    hashed_password = password_context.hash(registration.password)
+    hashed_password = hash_password(registration.password)
     new_user = User(username=registration.username, hashed_password=hashed_password)
     database.add(new_user)
     database.commit()
