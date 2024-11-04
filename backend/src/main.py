@@ -16,7 +16,8 @@ from pydantic import BaseModel, Field, AnyHttpUrl
 from .database import get_database, get_database_with_auto_persist_changes_disabled
 from .dependencies import DatabaseSession
 from .models import NewsArticle, User, user_news_association_table
-from .user.service import password_context, retrieve_user_by_access_token, retrieve_user_by_credentials, create_access_token
+from .user.dependencies import CurrentLoggedInUser
+from .user.service import password_context, retrieve_user_by_credentials, create_access_token
 
 # from pydantic import BaseModel
 
@@ -239,7 +240,7 @@ def register_user(registration: UserRegistrationRequestSchema, database: Databas
 
 
 @app.get("/api/v1/users/me")
-def read_users_me(user=Depends(retrieve_user_by_access_token)):
+def read_users_me(user: CurrentLoggedInUser):
     return {"username": user.username}
 
 
@@ -284,10 +285,7 @@ def read_news(database: DatabaseSession):
 @app.get(
     "/api/v1/news/user_news"
 )
-def read_user_news(
-        database: DatabaseSession,
-        user=Depends(retrieve_user_by_access_token)
-):
+def read_user_news(database: DatabaseSession, user: CurrentLoggedInUser):
     """
     read user news
 
@@ -362,9 +360,7 @@ class NewsSummaryRequestSchema(BaseModel):
     content: str
 
 @app.post("/api/v1/news/news_summary")
-async def summarize_news(
-        news: NewsSummaryRequestSchema, user=Depends(retrieve_user_by_access_token)
-):
+async def summarize_news(news: NewsSummaryRequestSchema, user: CurrentLoggedInUser):
     news_summary = {}
     messages = [
         {
@@ -390,7 +386,7 @@ async def summarize_news(
 def upvote_news(
         id,
         database: DatabaseSession,
-        user=Depends(retrieve_user_by_access_token),
+        user: CurrentLoggedInUser
 ):
     message = toggle_upvote(id, user.id, database)
     return {"message": message}
