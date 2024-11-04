@@ -145,7 +145,7 @@ async def search_news(search_query: SearchRequestSchema):
                 "content": paragraphs,
             }
             news["content"] = " ".join(news["content"])
-            news["id"] = next(news_service._news_id_counter)
+            news["id"] = news_service.generate_news_id()
             news_list.append(news)
         except Exception as e:
             print(e)

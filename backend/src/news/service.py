@@ -12,6 +12,9 @@ from ..models import NewsArticle, user_news_association_table
 
 _news_id_counter = itertools.count(start=1000000)
 
+def generate_news_id() -> int:
+    return next(_news_id_counter)
+
 def save_news(news):
     """
     save news to database
