@@ -6,7 +6,7 @@ import requests
 from fastapi import APIRouter, HTTPException, Query, status, FastAPI
 import os
 
-from .database import get_database_with_auto_persist_changes_disabled
+from .database import get_database, get_database_with_auto_persist_changes_disabled
 from .models import NewsArticle
 from .user.router import router as user_api_router
 
@@ -44,7 +44,13 @@ def start_scheduler():
         # should change into simple factory pattern
         news_service.download_price_changes_news()
     database.close()
-    background_scheduler.add_job(news_service.download_price_changes_news, "interval", minutes=100)
+
+    def job():
+        database = get_database()
+        news_service.download_price_changes_news(database)
+        database.close()
+
+    background_scheduler.add_job(job, "interval", minutes=100)
     background_scheduler.start()
 
 

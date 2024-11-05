@@ -7,7 +7,6 @@ from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 from urllib.parse import quote
 from .config import configuration
-from ..database import get_database
 from ..models import NewsArticle, user_news_association_table
 
 
@@ -16,14 +15,13 @@ _news_id_counter = itertools.count(start=1000000)
 def generate_news_id() -> int:
     return next(_news_id_counter)
 
-def save_news(news):
+def save_news(news, database: Session):
     """
     save news to database
     :param news:
     :return:
     """
-    session = get_database()
-    session.add(NewsArticle(
+    database.add(NewsArticle(
         url=news["url"],
         title=news["title"],
         time=news["time"],
@@ -31,8 +29,7 @@ def save_news(news):
         summary=news["summary"],
         reason=news["reason"],
     ))
-    session.commit()
-    session.close()
+    database.commit()
 
 def fetch_news_snapshots(search_term, is_initial=False):
     """
@@ -70,7 +67,7 @@ def fetch_news_snapshots(search_term, is_initial=False):
         news_snapshots = response.json()["lists"]
     return news_snapshots
 
-def download_price_changes_news(is_initial=False):
+def download_price_changes_news(database: Session, is_initial=False):
     """
     download price changes news
 
@@ -128,7 +125,7 @@ def download_price_changes_news(is_initial=False):
             summary = json.loads(summary)
             news["summary"] = summary["影響"]
             news["reason"] = summary["原因"]
-            save_news(news)
+            save_news(news, database)
 
 def get_upvote_status(news_id, user_id, database):
     upvote_users_count = (
