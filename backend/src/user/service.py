@@ -33,3 +33,20 @@ def create_access_token(claims, valid_duration=None):
     claims.update({"exp": expiration_time})
     token = jwt.encode(claims, key=configuration.access_token_secret_key, algorithm=configuration.access_token_algorithm)
     return token
+
+
+def login(database: Session, username: str, password: str) -> dict:
+    user = retrieve_user_by_credentials(database, username, password)
+    access_token = create_access_token(
+        claims={"sub": str(user.username)}, valid_duration=timedelta(minutes=30)
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+def register_user(database: Session, username: str, password: str) -> User:
+    hashed_password = hash_password(password)
+    new_user = User(username=username, hashed_password=hashed_password)
+    database.add(new_user)
+    database.commit()
+    database.refresh(new_user)
+    return new_user
