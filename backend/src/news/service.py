@@ -1,10 +1,12 @@
 import itertools
 import json
+from urllib.parse import quote
+
 from openai import OpenAI
 import requests
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
-from urllib.parse import quote
+
 from . import utils
 from .config import configuration
 from ..models import NewsArticle, User, user_news_association_table

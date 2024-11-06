@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from src.dependencies import DatabaseSession
 from src.user.dependencies import CurrentLoggedInUser
 from . import service

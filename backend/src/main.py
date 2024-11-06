@@ -1,21 +1,15 @@
-import sentry_sdk
 from apscheduler.schedulers.background import BackgroundScheduler
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, status, FastAPI
-import os
+import sentry_sdk
 
 from .config import configuration
 from .database import get_database, get_database_with_auto_persist_changes_disabled
 from .models import NewsArticle
-from .user.router import router as user_api_router
-
 from .news import service as news_service
 from .news.router import router as news_api_router
-
 from .price.router import router as price_api_router
-
-# from pydantic import BaseModel
+from .user.router import router as user_api_router
 
 sentry_sdk.init(
     dsn=configuration.sentry_dsn,
@@ -34,7 +28,6 @@ app.add_middleware(
     allow_headers=configuration.cors_allow_headers,
 )
 
-import os
 
 @app.on_event("startup")
 def start_scheduler():

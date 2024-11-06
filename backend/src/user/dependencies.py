@@ -1,9 +1,11 @@
+from typing import Annotated
+
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
+
 from src.dependencies import DatabaseSession
 from src.models import User
-from typing import Annotated
 from .config import configuration
 
 
