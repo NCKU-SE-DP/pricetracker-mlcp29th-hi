@@ -13,18 +13,18 @@ def _hash_password(plaintext: str) -> str:
     return _password_context.hash(plaintext)
 
 
-def _is_password_correct(password, existing_password_hash):
+def _is_password_correct(password, existing_password_hash) -> bool:
     return _password_context.verify(password, existing_password_hash)
 
 
-def _retrieve_user_by_credentials(database, username, password):
+def _retrieve_user_by_credentials(database, username, password) -> User | None:
     user = database.query(User).filter(User.username == username).first()
     if not _is_password_correct(password, user.hashed_password):
-        return False
+        return None
     return user
 
 
-def _create_access_token(claims, valid_duration=None):
+def _create_access_token(claims, valid_duration=None) -> str:
     """create access token"""
     claims = claims.copy()
     if valid_duration:
