@@ -1,71 +1,24 @@
 from fastapi import APIRouter
-import requests
 from src.dependencies import DatabaseSession
-from src.models import NewsArticle
 from src.user.dependencies import CurrentLoggedInUser
 from . import service
-from . import utils
 from .schemas import NewsSummaryRequestSchema, SearchRequestSchema
 
 router = APIRouter(prefix="/api/v1/news")
 
 @router.get("/news")
 def read_news(database: DatabaseSession):
-    """
-    read news
-
-    :param database:
-    :return:
-    """
-    news_list = database.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
-    news_list_adding_upvote_status = []
-    for news in news_list:
-        upvotes, is_upvoted = service.get_upvote_status(news.id, None, database)
-        news_list_adding_upvote_status.append(
-            {**news.__dict__, "upvotes": upvotes, "is_upvoted": is_upvoted}
-        )
-    return news_list_adding_upvote_status
+    return service.retrieve_news_with_upvote_status(database, None)
 
 
 @router.get("/user_news")
 def read_user_news(database: DatabaseSession, user: CurrentLoggedInUser):
-    """
-    read user news
-
-    :param database:
-    :param user:
-    :return:
-    """
-    news_list = database.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
-    news_list_adding_upvote_status = []
-    for news in news_list:
-        upvotes, is_upvoted = service.get_upvote_status(news.id, user.id, database)
-        news_list_adding_upvote_status.append(
-            {
-                **news.__dict__,
-                "upvotes": upvotes,
-                "is_upvoted": is_upvoted,
-            }
-        )
-    return news_list_adding_upvote_status
+    return service.retrieve_news_with_upvote_status(database, user)
 
 
 @router.post("/search_news")
 async def search_news(search_query: SearchRequestSchema):
-    prompt = search_query.prompt
-    news_list = []
-    keywords = service.extract_search_keywords(search_query.prompt)
-    # should change into simple factory pattern
-    news_snapshots = service.fetch_news_snapshots(keywords, is_initial=False)
-    for snapshot in news_snapshots:
-        try:
-            response = requests.get(snapshot["titleLink"])
-            news = utils.parse_news_html(response.text)
-            news["id"] = service.generate_news_id()
-            news_list.append(news)
-        except Exception as exception:
-            print(exception)
-    return sorted(news_list, key=lambda x: x["time"], reverse=True)
+    return service.search_news(search_query.prompt)
 
 
 @router.post("/news_summary")

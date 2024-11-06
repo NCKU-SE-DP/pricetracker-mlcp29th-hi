@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from urllib.parse import quote
 from . import utils
 from .config import configuration
-from ..models import NewsArticle, user_news_association_table
+from ..models import NewsArticle, User, user_news_association_table
 
 
 _news_id_counter = itertools.count(start=1000000)
@@ -160,3 +160,28 @@ def toggle_upvote(news_id, user_id, database):
 
 def does_news_exist(news_id, database: Session):
     return database.query(NewsArticle).filter_by(id=news_id).first() is not None
+
+def retrieve_news_with_upvote_status(database: Session, user: User | None):
+    news_list = database.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
+    news_list_adding_upvote_status = []
+    for news in news_list:
+        upvotes, is_upvoted = get_upvote_status(news.id, (None if user is None else user.id), database)
+        news_list_adding_upvote_status.append(
+            {**news.__dict__, "upvotes": upvotes, "is_upvoted": is_upvoted}
+        )
+    return news_list_adding_upvote_status
+
+def search_news(prompt: str) -> list:
+    news_list = []
+    keywords = extract_search_keywords(prompt)
+    # should change into simple factory pattern
+    news_snapshots = fetch_news_snapshots(keywords, is_initial=False)
+    for snapshot in news_snapshots:
+        try:
+            response = requests.get(snapshot["titleLink"])
+            news = utils.parse_news_html(response.text)
+            news["id"] = generate_news_id()
+            news_list.append(news)
+        except Exception as exception:
+            print(exception)
+    return sorted(news_list, key=lambda x: x["time"], reverse=True)
