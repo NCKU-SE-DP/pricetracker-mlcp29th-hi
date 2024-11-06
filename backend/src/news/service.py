@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 import itertools
 import json
 from openai import OpenAI
@@ -6,6 +5,7 @@ import requests
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 from urllib.parse import quote
+from . import utils
 from .config import configuration
 from ..models import NewsArticle, user_news_association_table
 
@@ -37,7 +37,7 @@ def save_news(news, database: Session):
         url=news["url"],
         title=news["title"],
         time=news["time"],
-        content=" ".join(news["content"]),  # 將內容list轉換為字串
+        content=news["content"],
         summary=news["summary"],
         reason=news["reason"],
     ))
@@ -105,31 +105,14 @@ def download_price_changes_news(database: Session, is_initial=False):
     """
     news_snapshots = fetch_news_snapshots("價格", is_initial=is_initial)
     for snapshot in news_snapshots:
-        title = snapshot["title"]
         relevance = _ask_OpenAI(
             system_prompt="你是一個關聯度評估機器人，請評估新聞標題是否與「民生用品的價格變化」相關，並給予'high'、'medium'、'low'評價。(僅需回答'high'、'medium'、'low'三個詞之一)",
-            user_prompt=title
+            user_prompt=snapshot["title"]
         )
         if relevance == "high":
             response = requests.get(snapshot["titleLink"])
-            soup = BeautifulSoup(response.text, "html.parser")
-            # 標題
-            title = soup.find("h1", class_="article-content__title").text
-            time = soup.find("time", class_="article-content__time").text
-            # 定位到包含文章内容的 <section>
-            content_section = soup.find("section", class_="article-content__editor")
-
-            paragraphs = [
-                paragraph.text
-                for paragraph in content_section.find_all("p")
-                if paragraph.text.strip() != "" and "▪" not in paragraph.text
-            ]
-            news =  {
-                "url": snapshot["titleLink"],
-                "title": title,
-                "time": time,
-                "content": paragraphs,
-            }
+            news = utils.parse_news_html(response.text)
+            news["url"] = snapshot["titleLink"]
             summary = summarize_news(news["content"])
             news["summary"] = summary["影響"]
             news["reason"] = summary["原因"]

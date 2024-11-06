@@ -1,10 +1,10 @@
-from bs4 import BeautifulSoup
 from fastapi import APIRouter
 import requests
 from src.dependencies import DatabaseSession
 from src.models import NewsArticle
 from src.user.dependencies import CurrentLoggedInUser
 from . import service
+from . import utils
 from .schemas import NewsSummaryRequestSchema, SearchRequestSchema
 
 router = APIRouter(prefix="/api/v1/news")
@@ -60,25 +60,7 @@ async def search_news(search_query: SearchRequestSchema):
     for snapshot in news_snapshots:
         try:
             response = requests.get(snapshot["titleLink"])
-            soup = BeautifulSoup(response.text, "html.parser")
-            # 標題
-            title = soup.find("h1", class_="article-content__title").text
-            time = soup.find("time", class_="article-content__time").text
-            # 定位到包含文章内容的 <section>
-            content_section = soup.find("section", class_="article-content__editor")
-
-            paragraphs = [
-                paragraph.text
-                for paragraph in content_section.find_all("p")
-                if paragraph.text.strip() != "" and "▪" not in paragraph.text
-            ]
-            news = {
-                "url": snapshot["titleLink"],
-                "title": title,
-                "time": time,
-                "content": paragraphs,
-            }
-            news["content"] = " ".join(news["content"])
+            news = utils.parse_news_html(response.text)
             news["id"] = service.generate_news_id()
             news_list.append(news)
         except Exception as exception:
