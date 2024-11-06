@@ -27,7 +27,6 @@ def _retrieve_user_by_credentials(database, username, password) -> User | None:
 
 
 def _create_access_token(claims, valid_duration=None) -> str:
-    """create access token"""
     claims = claims.copy()
     if valid_duration:
         expiration_time = datetime.utcnow() + valid_duration

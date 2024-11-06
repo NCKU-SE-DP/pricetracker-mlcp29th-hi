@@ -24,11 +24,6 @@ def _does_news_exist(news_id: int, database: Session) -> bool:
 
 
 def _save_news(news: dict, database: Session):
-    """
-    save news to database
-    :param news:
-    :return:
-    """
     database.add(NewsArticle(
         url=news["url"],
         title=news["title"],
@@ -79,15 +74,7 @@ def _extract_search_keywords(news_expectation: str) -> str | None:
 
 
 def _fetch_news_snapshots(search_term: str, is_initial=False) -> list:
-    """
-    fetch news snapshots
-
-    :param search_term:
-    :param is_initial:
-    :return:
-    """
     news_snapshots = []
-    # iterate pages to get more news data, not actually get all news data
     if is_initial:
         snapshots_by_page = []
         for page in range(1, 10):
@@ -129,7 +116,7 @@ def retrieve_news_with_upvote_status(database: Session, user: User | None) -> li
 def search_news(prompt: str) -> list:
     news_list = []
     keywords = _extract_search_keywords(prompt)
-    # should change into simple factory pattern
+    # TODO: should change into simple factory pattern
     news_snapshots = _fetch_news_snapshots(keywords, is_initial=False)
     for snapshot in news_snapshots:
         try:
@@ -176,12 +163,6 @@ def toggle_upvote(news_id: int, user_id: int, database: Session) -> str:
 
 
 def download_price_changes_news(database: Session, is_initial=False):
-    """
-    download price changes news
-
-    :param is_initial:
-    :return:
-    """
     news_snapshots = _fetch_news_snapshots("價格", is_initial=is_initial)
     for snapshot in news_snapshots:
         relevance = _ask_OpenAI(

@@ -15,14 +15,12 @@ async def login_for_access_token(
         database: DatabaseSession,
         form_response: OAuth2PasswordRequestForm = Depends()
 ):
-    """login"""
     access_token = service.login(database, form_response.username, form_response.password)
     return access_token
 
 
 @router.post("/register")
 def register_user(registration: UserRegistrationRequestSchema, database: DatabaseSession):
-    """register user"""
     new_user = service.register_user(database, registration.username, registration.password)
     return new_user
 
