@@ -1,13 +1,10 @@
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
-import json
-from openai import OpenAI
 import requests
 from src.dependencies import DatabaseSession
 from src.models import NewsArticle
 from src.user.dependencies import CurrentLoggedInUser
 from . import service
-from .config import configuration
 from .schemas import NewsSummaryRequestSchema, SearchRequestSchema
 
 router = APIRouter(prefix="/api/v1/news")
@@ -57,19 +54,7 @@ def read_user_news(database: DatabaseSession, user: CurrentLoggedInUser):
 async def search_news(search_query: SearchRequestSchema):
     prompt = search_query.prompt
     news_list = []
-    messages = [
-        {
-            "role": "system",
-            "content": "你是一個關鍵字提取機器人，用戶將會輸入一段文字，表示其希望看見的新聞內容，請提取出用戶希望看見的關鍵字，請截取最重要的關鍵字即可，避免出現「新聞」、「資訊」等混淆搜尋引擎的字詞。(僅須回答關鍵字，若有多個關鍵字，請以空格分隔)",
-        },
-        {"role": "user", "content": f"{prompt}"},
-    ]
-
-    completion = OpenAI(api_key=configuration.open_ai_api_key).chat.completions.create(
-        model=configuration.open_ai_model,
-        messages=messages,
-    )
-    keywords = completion.choices[0].message.content
+    keywords = service.extract_search_keywords(search_query.prompt)
     # should change into simple factory pattern
     news_snapshots = service.fetch_news_snapshots(keywords, is_initial=False)
     for snapshot in news_snapshots:
@@ -103,24 +88,10 @@ async def search_news(search_query: SearchRequestSchema):
 
 @router.post("/news_summary")
 async def summarize_news(news: NewsSummaryRequestSchema, user: CurrentLoggedInUser):
+    summary = service.summarize_news(news.content)
     news_summary = {}
-    messages = [
-        {
-            "role": "system",
-            "content": "你是一個新聞摘要生成機器人，請統整新聞中提及的影響及主要原因 (影響、原因各50個字，請以json格式回答 {'影響': '...', '原因': '...'})",
-        },
-        {"role": "user", "content": f"{news.content}"},
-    ]
-
-    completion = OpenAI(api_key=configuration.open_ai_api_key).chat.completions.create(
-        model=configuration.open_ai_model,
-        messages=messages,
-    )
-    content = completion.choices[0].message.content
-    if content:
-        content = json.loads(content)
-        news_summary["summary"] = content["影響"]
-        news_summary["reason"] = content["原因"]
+    news_summary["summary"] = summary["影響"]
+    news_summary["reason"] = summary["原因"]
     return news_summary
 
 
