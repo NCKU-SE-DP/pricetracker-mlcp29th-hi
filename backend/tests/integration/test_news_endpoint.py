@@ -39,7 +39,7 @@ def clear_users():
 
 @pytest.fixture(scope="module")
 def test_user(clear_users):
-    hashed_password = user_service.hash_password("testpassword")
+    hashed_password = user_service._hash_password("testpassword")
 
     with next(override_session_opener()) as db:
         user = User(username="testuser", hashed_password=hashed_password)

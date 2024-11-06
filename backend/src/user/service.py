@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from jose import jwt
 from passlib.context import CryptContext
+from sqlalchemy.orm import Session
 from src.models import User
 from .config import configuration
 
@@ -8,22 +9,22 @@ from .config import configuration
 _password_context = CryptContext(schemes=[configuration.password_hashing_algorithm], deprecated=["auto"])
 
 
-def hash_password(plaintext: str) -> str:
+def _hash_password(plaintext: str) -> str:
     return _password_context.hash(plaintext)
 
 
-def is_password_correct(password, existing_password_hash):
+def _is_password_correct(password, existing_password_hash):
     return _password_context.verify(password, existing_password_hash)
 
 
-def retrieve_user_by_credentials(database, username, password):
+def _retrieve_user_by_credentials(database, username, password):
     user = database.query(User).filter(User.username == username).first()
-    if not is_password_correct(password, user.hashed_password):
+    if not _is_password_correct(password, user.hashed_password):
         return False
     return user
 
 
-def create_access_token(claims, valid_duration=None):
+def _create_access_token(claims, valid_duration=None):
     """create access token"""
     claims = claims.copy()
     if valid_duration:
@@ -36,15 +37,15 @@ def create_access_token(claims, valid_duration=None):
 
 
 def login(database: Session, username: str, password: str) -> dict:
-    user = retrieve_user_by_credentials(database, username, password)
-    access_token = create_access_token(
+    user = _retrieve_user_by_credentials(database, username, password)
+    access_token = _create_access_token(
         claims={"sub": str(user.username)}, valid_duration=timedelta(minutes=30)
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
 
 def register_user(database: Session, username: str, password: str) -> User:
-    hashed_password = hash_password(password)
+    hashed_password = _hash_password(password)
     new_user = User(username=username, hashed_password=hashed_password)
     database.add(new_user)
     database.commit()
