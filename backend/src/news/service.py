@@ -24,10 +24,10 @@ def _ask_OpenAI(system_prompt: str, user_prompt: str) -> str | None:
     response = completion.choices[0].message.content
     return response
 
-def generate_news_id() -> int:
+def _generate_news_id() -> int:
     return next(_news_id_counter)
 
-def save_news(news, database: Session):
+def _save_news(news, database: Session):
     """
     save news to database
     :param news:
@@ -43,7 +43,7 @@ def save_news(news, database: Session):
     ))
     database.commit()
 
-def fetch_news_snapshots(search_term, is_initial=False):
+def _fetch_news_snapshots(search_term, is_initial=False):
     """
     fetch news snapshots
 
@@ -80,7 +80,7 @@ def fetch_news_snapshots(search_term, is_initial=False):
     return news_snapshots
 
 
-def extract_search_keywords(news_expectation: str) -> str | None:
+def _extract_search_keywords(news_expectation: str) -> str | None:
     keywords = _ask_OpenAI(
         system_prompt="你是一個關鍵字提取機器人，用戶將會輸入一段文字，表示其希望看見的新聞內容，請提取出用戶希望看見的關鍵字，請截取最重要的關鍵字即可，避免出現「新聞」、「資訊」等混淆搜尋引擎的字詞。(僅須回答關鍵字，若有多個關鍵字，請以空格分隔)",
         user_prompt=news_expectation
@@ -103,7 +103,7 @@ def download_price_changes_news(database: Session, is_initial=False):
     :param is_initial:
     :return:
     """
-    news_snapshots = fetch_news_snapshots("價格", is_initial=is_initial)
+    news_snapshots = _fetch_news_snapshots("價格", is_initial=is_initial)
     for snapshot in news_snapshots:
         relevance = _ask_OpenAI(
             system_prompt="你是一個關聯度評估機器人，請評估新聞標題是否與「民生用品的價格變化」相關，並給予'high'、'medium'、'low'評價。(僅需回答'high'、'medium'、'low'三個詞之一)",
@@ -116,9 +116,9 @@ def download_price_changes_news(database: Session, is_initial=False):
             summary = summarize_news(news["content"])
             news["summary"] = summary["影響"]
             news["reason"] = summary["原因"]
-            save_news(news, database)
+            _save_news(news, database)
 
-def get_upvote_status(news_id, user_id, database):
+def _get_upvote_status(news_id, user_id, database):
     upvote_users_count = (
         database.query(user_news_association_table)
         .filter_by(news_articles_id=news_id)
@@ -158,14 +158,14 @@ def toggle_upvote(news_id, user_id, database):
         database.commit()
         return "Article upvoted"
 
-def does_news_exist(news_id, database: Session):
+def _does_news_exist(news_id, database: Session):
     return database.query(NewsArticle).filter_by(id=news_id).first() is not None
 
 def retrieve_news_with_upvote_status(database: Session, user: User | None):
     news_list = database.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
     news_list_adding_upvote_status = []
     for news in news_list:
-        upvotes, is_upvoted = get_upvote_status(news.id, (None if user is None else user.id), database)
+        upvotes, is_upvoted = _get_upvote_status(news.id, (None if user is None else user.id), database)
         news_list_adding_upvote_status.append(
             {**news.__dict__, "upvotes": upvotes, "is_upvoted": is_upvoted}
         )
@@ -173,14 +173,14 @@ def retrieve_news_with_upvote_status(database: Session, user: User | None):
 
 def search_news(prompt: str) -> list:
     news_list = []
-    keywords = extract_search_keywords(prompt)
+    keywords = _extract_search_keywords(prompt)
     # should change into simple factory pattern
-    news_snapshots = fetch_news_snapshots(keywords, is_initial=False)
+    news_snapshots = _fetch_news_snapshots(keywords, is_initial=False)
     for snapshot in news_snapshots:
         try:
             response = requests.get(snapshot["titleLink"])
             news = utils.parse_news_html(response.text)
-            news["id"] = generate_news_id()
+            news["id"] = _generate_news_id()
             news_list.append(news)
         except Exception as exception:
             print(exception)
