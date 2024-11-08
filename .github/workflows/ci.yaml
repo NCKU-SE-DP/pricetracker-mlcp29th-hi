@@ -36,7 +36,10 @@ jobs:
 
       - name: Run integration tests (with mock DB)
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          USER_ACCESS_TOKEN_SECRET_KEY: ${{ secrets.USER_ACCESS_TOKEN_SECRET_KEY }}
         run: |
           cd backend
           pytest tests/integration --cov=src --cov-report=xml --disable-warnings
