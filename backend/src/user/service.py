@@ -29,9 +29,9 @@ def _retrieve_user_by_credentials(database, username, password) -> User | None:
 def _create_access_token(claims, valid_duration=None) -> str:
     claims = claims.copy()
     if valid_duration:
-        expiration_time = datetime.utcnow() + valid_duration
+        expiration_time = datetime.now() + valid_duration
     else:
-        expiration_time = datetime.utcnow() + timedelta(minutes=configuration.access_token_valid_duration)
+        expiration_time = datetime.now() + timedelta(minutes=configuration.access_token_valid_duration)
     claims.update({"exp": expiration_time})
     token = jwt.encode(claims, key=configuration.access_token_secret_key, algorithm=configuration.access_token_algorithm)
     return token
