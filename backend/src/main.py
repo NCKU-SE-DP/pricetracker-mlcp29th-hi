@@ -40,7 +40,7 @@ def shutdown_scheduler():
     background_scheduler.shutdown()
 
 @asynccontextmanager
-async def lifespan():
+async def lifespan(app: FastAPI):
     start_scheduler()
     yield
     shutdown_scheduler()
