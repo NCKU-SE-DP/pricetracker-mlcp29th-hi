@@ -26,19 +26,21 @@ UDNCrawler Methods:
     _create_search_params(self, page: int, search_term: str): Creates the parameters for the search request.
     _perform_request(self, params: dict): Performs the HTTP request to fetch news data.
     _parse_snapshots(response): Parses the response to extract news snapshots.
-    parse(self, url: str) -> News: Parses a news article from a given URL.
+    _parse(self, url: str) -> News: Parses a news article from a given URL.
     _extract_news(soup, url: str) -> News: Extracts news details from the BeautifulSoup object.
     save(self, news: News, db: Session): Saves a news article to the database.
 """
 
-import requests
-from requests import Response
 from bs4 import BeautifulSoup
 from pydantic import TypeAdapter
+import requests
+from requests import Response
 from sqlalchemy.orm import Session
+from urllib.parse import quote
 from urllib.parse import quote
 
 from .crawler_base import NewsCrawlerBase, NewsSnapshot, News, NewsWithSummary
+from ..models import NewsArticle
 
 
 class UDNCrawler(NewsCrawlerBase):
@@ -63,12 +65,8 @@ class UDNCrawler(NewsCrawlerBase):
     def search(
         self, search_term: str, page: int | tuple[int, int]
     ) -> list[NewsSnapshot]:
-
-        # Calculate the range of pages to fetch news from.
-        # If 'page' is a tuple, unpack it and create a range representing those pages (inclusive).
-        # If 'page' is an int, create a list containing only that single page number.
-        # page_range = range(*page) if isinstance(page, tuple) else [page]
-        ...
+        page_range = range(page, page + 1) if isinstance(page, int) else range(page[0], page[1] + 1)
+        return [self._perform_search(page, search_term) for page in page_range]
 
     def _perform_search(self, page: int, search_term: str) -> list[NewsSnapshot]:
         parameters = self._create_search_params(page, search_term)
@@ -92,8 +90,11 @@ class UDNCrawler(NewsCrawlerBase):
     def _parse_snapshots(response: Response) -> list[NewsSnapshot]:
         return TypeAdapter(list[NewsSnapshot]).validate_python(response.json()["lists"])
 
-    def parse(self, url: str) -> News:
-        ...
+    def _parse(self, url: str) -> News:
+        response = self._perform_request(url)
+        soup = BeautifulSoup(response.text, "html.parser")
+        news = self._extract_news(soup, url)
+        return news
 
     @staticmethod
     def _extract_news(soup: BeautifulSoup, url: str) -> News:
@@ -109,4 +110,11 @@ class UDNCrawler(NewsCrawlerBase):
         return News(title=title, url=url, time=time, content=content)
 
     def save(self, news: NewsWithSummary, db: Session):
-        ...
+        existing_news = db.query(NewsArticle).filter(NewsArticle.content == news.content).first()
+        if existing_news is None:
+            try:
+                db.add(NewsArticle(**news.model_dump()))
+            except:
+                db.rollback()
+            else:
+                db.commit()
