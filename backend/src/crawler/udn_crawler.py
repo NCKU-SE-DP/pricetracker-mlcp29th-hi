@@ -31,9 +31,12 @@ UDNCrawler Methods:
     save(self, news: News, db: Session): Saves a news article to the database.
 """
 
+import requests
 from requests import Response
 from bs4 import BeautifulSoup
+from pydantic import TypeAdapter
 from sqlalchemy.orm import Session
+from urllib.parse import quote
 
 from .crawler_base import NewsCrawlerBase, NewsSnapshot, News, NewsWithSummary
 
@@ -68,24 +71,42 @@ class UDNCrawler(NewsCrawlerBase):
         ...
 
     def _perform_search(self, page: int, search_term: str) -> list[NewsSnapshot]:
-        ...
+        parameters = self._create_search_params(page, search_term)
+        response = self._perform_request(self.NEWS_WEBSITE_URL, parameters)
+        snapshots = UDNCrawler._parse_snapshots(response)
+        return snapshots
 
     def _create_search_params(self, page: int, search_term: str) -> dict:
-        ...
+        parameters = {
+            "page": page,
+            "id": f"search:{quote(search_term)}",
+            "channelId": self.CHANNEL_ID,
+            "type": "searchword",
+        }
+        return parameters
 
     def _perform_request(self, url: str | None = None, params: dict | None = None) -> Response:
-        ...
+        return requests.get(url=url, params=params, timeout=self.timeout)
 
     @staticmethod
     def _parse_snapshots(response: Response) -> list[NewsSnapshot]:
-        ...
+        return TypeAdapter(list[NewsSnapshot]).validate_python(response.json()["lists"])
 
     def parse(self, url: str) -> News:
         ...
 
     @staticmethod
     def _extract_news(soup: BeautifulSoup, url: str) -> News:
-        ...
+        title = soup.find("h1", class_="article-content__title").text
+        time = soup.find("time", class_="article-content__time").text
+        content_section = soup.find("section", class_="article-content__editor")
+        paragraphs = [
+            paragraph.text
+            for paragraph in content_section.find_all("p")
+            if paragraph.text.strip() != "" and "▪" not in paragraph.text
+        ]
+        content = " ".join(paragraphs)
+        return News(title=title, url=url, time=time, content=content)
 
     def save(self, news: NewsWithSummary, db: Session):
         ...
