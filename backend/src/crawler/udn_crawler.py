@@ -1,9 +1,9 @@
 """
 UDN News Scraper Module
 
-This module provides the UDNCrawler class for fetching, parsing, and saving news articles from the UDN website.
-The class extends the NewsCrawlerBase and includes functionalities to search for news articles based on a search term,
-parse the details of individual articles, and save them to a database using SQLAlchemy ORM.
+This module provides the UDNCrawler class for fetching, parsing, and saving news from the UDN website.
+The class extends the NewsCrawlerBase and includes functionalities to search for news based on a search term,
+parse the details of individual news, and save them to a database using SQLAlchemy ORM.
 
 Classes:
     UDNCrawler: A class to scrape news from UDN.
@@ -22,13 +22,13 @@ UDNCrawler Methods:
     __init__(self, timeout: int = 5): Initializes the crawler with a default timeout for HTTP requests.
     search_initially(self, search_term: str) -> list[NewsSnapshot]: Fetches news snapshots for a given search term across multiple pages.
     search(self, search_term: str, page: int | tuple[int, int]) -> list[NewsSnapshot]: Fetches news snapshots for specified pages.
-    _perform_search(self, page: int, search_term: str) -> list[NewsSnapshot]: Helper method to fetch news snapshots for a specific page.
+    save(self, news: NewsWithSummary, db: Session): Saves a news with summary added to the database.
+    _perform_search(self, page: int, search_term: str) -> list[NewsSnapshot]: Internal helper method to fetch news snapshots for a specific page.
     _create_search_params(self, page: int, search_term: str): Creates the parameters for the search request.
+    _parse_snapshots(response): Internal helper method to parse news snapshots from the given response of a search request.
+    _parse(self, url: str) -> News: Internal helper method to parses the news from a given validated URL. Instead of calling this method directly, this method should only be called by `validate_and_parse`, which is inherited from `NewsCrawlerBase`.
+    _extract_news(soup, url: str) -> News: Internal help method to extract news details from the BeautifulSoup object.
     _perform_request(self, params: dict): Performs the HTTP request to fetch news data.
-    _parse_snapshots(response): Parses the response to extract news snapshots.
-    _parse(self, url: str) -> News: Parses a news article from a given URL.
-    _extract_news(soup, url: str) -> News: Extracts news details from the BeautifulSoup object.
-    save(self, news: News, db: Session): Saves a news article to the database.
 """
 
 from bs4 import BeautifulSoup
@@ -68,12 +68,22 @@ class UDNCrawler(NewsCrawlerBase):
         page_range = range(page, page + 1) if isinstance(page, int) else range(page[0], page[1] + 1)
         return [self._perform_search(page, search_term) for page in page_range]
 
+    def save(self, news: NewsWithSummary, db: Session):
+        existing_news = db.query(NewsArticle).filter_by(content = news.content).first()
+        if existing_news is None:
+            try:
+                db.add(NewsArticle(**news.model_dump()))
+            except:
+                db.rollback()
+            else:
+                db.commit()
+
     def _perform_search(self, page: int, search_term: str) -> list[NewsSnapshot]:
         parameters = self._create_search_params(page, search_term)
         response = self._perform_request(self.NEWS_WEBSITE_URL, parameters)
         snapshots = UDNCrawler._parse_snapshots(response)
         return snapshots
-
+    
     def _create_search_params(self, page: int, search_term: str) -> dict:
         parameters = {
             "page": page,
@@ -83,19 +93,16 @@ class UDNCrawler(NewsCrawlerBase):
         }
         return parameters
 
-    def _perform_request(self, url: str | None = None, params: dict | None = None) -> Response:
-        return requests.get(url=url, params=params, timeout=self.timeout)
-
     @staticmethod
     def _parse_snapshots(response: Response) -> list[NewsSnapshot]:
         return TypeAdapter(list[NewsSnapshot]).validate_python(response.json()["lists"])
-
+    
     def _parse(self, url: str) -> News:
         response = self._perform_request(url)
         soup = BeautifulSoup(response.text, "html.parser")
         news = self._extract_news(soup, url)
         return news
-
+    
     @staticmethod
     def _extract_news(soup: BeautifulSoup, url: str) -> News:
         title = soup.find("h1", class_="article-content__title").text
@@ -109,12 +116,5 @@ class UDNCrawler(NewsCrawlerBase):
         content = " ".join(paragraphs)
         return News(title=title, url=url, time=time, content=content)
 
-    def save(self, news: NewsWithSummary, db: Session):
-        existing_news = db.query(NewsArticle).filter(NewsArticle.content == news.content).first()
-        if existing_news is None:
-            try:
-                db.add(NewsArticle(**news.model_dump()))
-            except:
-                db.rollback()
-            else:
-                db.commit()
+    def _perform_request(self, url: str | None = None, params: dict | None = None) -> Response:
+        return requests.get(url=url, params=params, timeout=self.timeout)
