@@ -1,0 +1,77 @@
+import unittest
+from unittest.mock import patch
+from pydantic import AnyHttpUrl
+from src.crawler.crawler_base import NewsCrawlerBase, News, NewsSnapshot
+from src.crawler.exceptions import DomainMismatchException
+
+
+class MockNewsCrawler(NewsCrawlerBase):
+    NEWS_WEBSITE_URL = "https://www.example.com"
+    NEWS_WEBSITE_NEWS_CHILD_URLS = ["https://news.example.com"]
+
+    def search(self, search_term: str, page: int | tuple[int, int]):
+        return [NewsSnapshot(title="Test Article", url="https://www.example.com/article")]
+
+    def _parse(self, url: AnyHttpUrl | str):
+        return News(
+            title="Test Article",
+            url=url,
+            time="2023-09-08T00:00:00",
+            content="This is the content of the article."
+        )
+
+    @staticmethod
+    def save(news: News, db=None):
+        return True
+
+
+class TestNewsCrawlerBase(unittest.TestCase):
+
+    def setUp(self):
+        self.crawler = MockNewsCrawler()
+
+    def test_is_valid_url_valid(self):
+        valid_url = "https://www.example.com/article"
+        self.assertTrue(self.crawler._is_valid_url(valid_url))
+
+    def test_is_valid_url_invalid(self):
+        invalid_url = "https://www.invalid.com/article"
+        self.assertFalse(self.crawler._is_valid_url(invalid_url))
+
+    def test_is_valid_url_child(self):
+        valid_child_url = "https://news.example.com/article"
+        self.assertTrue(self.crawler._is_valid_url(valid_child_url))
+
+    def test_is_valid_url_raises_domain_mismatch(self):
+        invalid_url = "https://www.invalid.com/article"
+
+        with self.assertRaises(DomainMismatchException):
+            self.crawler.validate_and_parse(invalid_url)
+
+    def test_search(self):
+        snapshots = self.crawler.search(search_term="test", page=1)
+        self.assertEqual(len(snapshots), 1)
+        self.assertEqual(snapshots[0].title, "Test Article")
+        self.assertEqual(snapshots[0].url, "https://www.example.com/article")
+
+    def test_parse(self):
+        news = self.crawler._parse("https://www.example.com/article")
+        self.assertEqual(news.title, "Test Article")
+        self.assertEqual(news.url, "https://www.example.com/article")
+        self.assertEqual(news.time, "2023-09-08T00:00:00")
+        self.assertEqual(news.content, "This is the content of the article.")
+
+    @patch('src.crawler.crawler_base.Session')
+    def test_save(self, mock_db_session):
+        news = News(
+            title="Test Article",
+            url="https://www.example.com/article",
+            time="2023-09-08T00:00:00",
+            content="This is the content of the article."
+        )
+        result = self.crawler.save(news, mock_db_session)
+        self.assertTrue(result)
+
+
+if __name__ == '__main__':
+    unittest.main()
