@@ -7,7 +7,6 @@ import requests
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
-from . import utils
 from .config import configuration
 from ..models import NewsArticle, User, user_news_association_table
 from ..crawler.crawler_base import NewsWithSummary
