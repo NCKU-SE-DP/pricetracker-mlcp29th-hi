@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
 import json
 from jose import jwt
+from src.crawler.crawler_base import NewsSnapshot
 from src.database import get_database
 from src.main import app
 from src.models import Base, NewsArticle, User
@@ -128,8 +129,8 @@ def mock_openai(mocker, return_content):
 def test_search_news(mocker):
     mock_openai(mocker, "keywords")
 
-    mock_fetch_news_snapshots = mocker.patch("src.news.service._fetch_news_snapshots", return_value=[
-        {"titleLink": "http://example.com/news1"}
+    mock_search = mocker.patch("src.news.service._search", return_value=[
+        NewsSnapshot(title="Title of the article", titleLink="https://udn.com/news/story/7240/8383719")
     ])
 
     mock_get = mocker.patch("src.news.service.requests.get", return_value=mocker.Mock(
