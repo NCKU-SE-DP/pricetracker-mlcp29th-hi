@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from .config import configuration
 from ..models import NewsArticle, User, user_news_association_table
-from ..crawler.crawler_base import NewsWithSummary
+from ..crawler.crawler_base import NewsSnapshot, NewsWithSummary
 from ..crawler.udn_crawler import UDNCrawler
 
 
@@ -19,10 +19,6 @@ _crawler = UDNCrawler()
 
 def _generate_news_id() -> int:
     return next(_news_id_counter)
-
-
-def _does_news_exist(news_id: int, database: Session) -> bool:
-    return database.query(NewsArticle).filter_by(id=news_id).first() is not None
 
 
 def _get_upvote_status(news_id: int, user_id: int, database: Session) -> tuple[int, int]:
@@ -63,13 +59,13 @@ def _extract_search_keywords(news_expectation: str) -> str | None:
     return keywords
 
 
-def _search(search_term: str, is_initial=False):
+def _search(search_term: str, is_initial=False) -> list[NewsSnapshot]:
     if is_initial:
         return _crawler.search_initially(search_term)
     return _crawler.search(search_term, page=1)
 
 
-def retrieve_news_with_upvote_status(database: Session, user: User | None) -> list:
+def retrieve_news_with_upvote_status(database: Session, user: User | None) -> list[dict]:
     news_list = database.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
     news_list_adding_upvote_status = []
     for news in news_list:
@@ -80,7 +76,7 @@ def retrieve_news_with_upvote_status(database: Session, user: User | None) -> li
     return news_list_adding_upvote_status
 
 
-def search_news(prompt: str) -> list:
+def search_news(prompt: str) -> list[dict]:
     news_list = []
     keywords = _extract_search_keywords(prompt)
     # TODO: should change into simple factory pattern
