@@ -14,7 +14,7 @@ from ..crawler.udn_crawler import UDNCrawler
 
 
 _news_id_counter = itertools.count(start=1000000)
-crawler = UDNCrawler()
+_crawler = UDNCrawler()
 
 
 def _generate_news_id() -> int:
@@ -65,8 +65,8 @@ def _extract_search_keywords(news_expectation: str) -> str | None:
 
 def _search(search_term: str, is_initial=False):
     if is_initial:
-        return crawler.search_initially(search_term)
-    return crawler.search(search_term, page=1)
+        return _crawler.search_initially(search_term)
+    return _crawler.search(search_term, page=1)
 
 
 def retrieve_news_with_upvote_status(database: Session, user: User | None) -> list:
@@ -87,7 +87,7 @@ def search_news(prompt: str) -> list:
     news_snapshots = _search(keywords, is_initial=False)
     for snapshot in news_snapshots:
         try:
-            news = crawler.validate_and_parse(snapshot.url).model_dump()
+            news = _crawler.validate_and_parse(snapshot.url).model_dump()
             news["id"] = _generate_news_id()
             news_list.append(news)
         except Exception as exception:
@@ -136,7 +136,7 @@ def download_price_changes_news(database: Session, is_initial=False):
             user_prompt=snapshot["title"]
         )
         if relevance == "high":
-            news = crawler.validate_and_parse(snapshot.url)
+            news = _crawler.validate_and_parse(snapshot.url)
             summary = summarize_news(news.content)
             news_with_summary = NewsWithSummary(
                 title=news.title,
@@ -146,4 +146,4 @@ def download_price_changes_news(database: Session, is_initial=False):
                 summary=summary["影響"],
                 reason=summary["原因"]
             )
-            crawler.save(news_with_summary, database)
+            _crawler.save(news_with_summary, database)
