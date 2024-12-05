@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from src.dependencies import DatabaseSession
 from src.user.dependencies import CurrentLoggedInUser
 from . import service
-from .schemas import NewsSummaryRequestSchema, SearchRequestSchema
+from .schemas import NewsSummaryRequestSchema, NewsSummaryCustomModelRequestSchema, SearchRequestSchema
 
 router = APIRouter(prefix="/api/v1/news")
 
@@ -25,6 +25,11 @@ async def search_news(search_query: SearchRequestSchema):
 @router.post("/news_summary")
 async def summarize_news(news: NewsSummaryRequestSchema, user: CurrentLoggedInUser):
     return service.summarize_news(news.content)
+
+
+@router.post("/news_summary_custom_model")
+async def summarize_news_with_custome_model(schema: NewsSummaryCustomModelRequestSchema, user: CurrentLoggedInUser):
+    return service.summarize_news(schema.content, schema.ai_model)
 
 
 @router.post("/{news_id}/upvote")

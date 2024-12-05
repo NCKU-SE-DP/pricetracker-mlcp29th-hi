@@ -1,4 +1,5 @@
 import itertools
+from typing import Literal
 from urllib.parse import quote
 
 from sqlalchemy import delete, insert, select
@@ -110,5 +111,10 @@ def download_price_changes_news(database: Session, is_initial=False):
             _crawler.save(news_with_summary, database)
 
 
-def summarize_news(news_content: str) -> NewsSummary:
-    return _llm_client.summarize_news(news_content)
+def summarize_news(news_content: str, ai_model: Literal["openai", "anthropic"] = "openai") -> NewsSummary:
+    llm_client_types = {
+        "openai"   : OpenAIClient,
+        "anthropic": AnthropicClient
+    }
+    client: LLMClientTemplate = llm_client_types[ai_model]()
+    return client.summarize_news(news_content)
