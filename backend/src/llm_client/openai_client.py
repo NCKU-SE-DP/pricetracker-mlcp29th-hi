@@ -1,10 +1,10 @@
 from openai import OpenAI
 
-from .base import LLMClientBase
+from .base import LLMClientTemplate
 from ..news.config import Configuration
 
 
-class OpenAIClient(LLMClientBase):   
+class OpenAIClient(LLMClientTemplate):   
 
     def __init__(self):
         configuration = Configuration()

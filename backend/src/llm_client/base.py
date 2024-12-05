@@ -50,6 +50,31 @@ class LLMClientBase(metaclass=abc.ABCMeta):
             This is an abstract method and must be implemented in subclasses of
             `LLMClientBase`.
         """
+        raise NotImplementedError
+
+
+    @abc.abstractmethod
+    def extract_search_keywords(self, news_expectation: str) -> str | None:
+        raise NotImplementedError
+
+
+    @abc.abstractmethod
+    def summarize_news(self, content: str) -> NewsSummary:
+        raise NotImplementedError
+
+
+    @abc.abstractmethod
+    def evaluate_relevance_to_price_changes(self, news_title: str) -> RelevanceLevel:
+        raise NotImplementedError
+
+
+class LLMClientTemplate(LLMClientBase, abc.ABC):
+
+    @abc.abstractmethod
+    def _ask(self, system_prompt: str, user_prompt: str) -> str | None:
+        """
+        Abstract method for interacting with the language model (LLM).
+        """
         return NotImplemented
 
 
