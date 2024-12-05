@@ -12,11 +12,7 @@ RUN_REAL_API_TESTS = os.getenv("RUN_REAL_API_TESTS", "false").lower() == "true"
 class TestOpenAIClient(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        if RUN_REAL_API_TESTS:
-            self.client = OpenAIClient()
-        else:
-            self.client = OpenAIClient()
-            self.client._openai.api_key = "fake_api_key"
+        self.client = OpenAIClient()
 
     @unittest.skipIf(not RUN_REAL_API_TESTS, "模擬 API 呼叫，跳過真實測試")
     def test_evaluate_relevance_to_price_changes_real(self):
@@ -34,7 +30,7 @@ class TestOpenAIClient(unittest.TestCase):
         result = self.client.extract_search_keywords("這篇新聞提到食品價格的波動以及市場的供應鏈問題")
         self.assertGreater(len(result.split()), 0)
 
-    @patch('src.llm_client.openai_client.OpenAIClient._ask')
+    @patch('src.llm_client.clients.OpenAIClient._ask')
     def test_evaluate_relevance_to_price_changes(self, mock_generate_text):
         mock_generate_text.return_value = 'high'
 
@@ -47,7 +43,7 @@ class TestOpenAIClient(unittest.TestCase):
             user_prompt="食品價格上漲"
         )
 
-    @patch('src.llm_client.openai_client.OpenAIClient._ask')
+    @patch('src.llm_client.clients.OpenAIClient._ask')
     def test_summarize_news(self, mock_generate_text):
         mock_generate_text.return_value = '{"影響": "影響描述", "原因": "原因描述"}'
 
@@ -60,7 +56,7 @@ class TestOpenAIClient(unittest.TestCase):
             user_prompt="一篇新聞內容"
         )
 
-    @patch('src.llm_client.openai_client.OpenAIClient._ask')
+    @patch('src.llm_client.clients.OpenAIClient._ask')
     def test_extract_search_keywords(self, mock_generate_text):
         mock_generate_text.return_value = '食品 價格'
 
