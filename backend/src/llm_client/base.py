@@ -1,6 +1,7 @@
 import abc
 from enum import Enum
 
+import aisuite
 from pydantic import BaseModel, Field
 
 
@@ -13,6 +14,11 @@ class RelevanceLevel(Enum):
     HIGH   = "high"
     MEDIUM = "medium"
     LOW    = "low"
+
+
+class LLMClientModel(Enum):
+    OPENAI_GPT_4O_MINI                = "openai:gpt-4o-mini"
+    ANTHROPIC_CLAUDE_3_HAIKU_20240307 = "anthropic:claude-3-haiku-20240307"
 
 
 class LLMClientBase(metaclass=abc.ABCMeta):
@@ -70,12 +76,25 @@ class LLMClientBase(metaclass=abc.ABCMeta):
 
 class LLMClientTemplate(LLMClientBase, abc.ABC):
 
+    @staticmethod
     @abc.abstractmethod
+    def _model() -> LLMClientModel:
+        raise NotImplementedError
+
+
+    def __init__(self):
+        self._client = aisuite.Client()
+
+
     def _ask(self, system_prompt: str, user_prompt: str) -> str | None:
-        """
-        Abstract method for interacting with the language model (LLM).
-        """
-        return NotImplemented
+        completion = self._client.chat.completions.create(
+            model=self._model().value,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+        return completion.choices[0].message.content
 
 
     def extract_search_keywords(self, news_expectation: str) -> str | None:
