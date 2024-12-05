@@ -1,8 +1,20 @@
-import json
+from enum import Enum
 
 from openai import OpenAI
+from pydantic import BaseModel, Field
 
 from ..news.config import Configuration
+
+
+class NewsSummary(BaseModel):
+    summary: str = Field(validation_alias="影響")
+    reason: str = Field(validation_alias="原因")
+
+
+class RelevanceLevel(Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
 
 
 class OpenAIClient:
@@ -42,17 +54,17 @@ class OpenAIClient:
         return keywords
     
 
-    def summarize_news(self, content: str) -> dict:
+    def summarize_news(self, content: str) -> NewsSummary:
         summary = self._ask(
             system_prompt="你是一個新聞摘要生成機器人，請統整新聞中提及的影響及主要原因 (影響、原因各50個字，請以json格式回答 {'影響': '...', '原因': '...'})",
             user_prompt=content
         )
-        return json.loads(summary)
+        return NewsSummary.model_validate_json(summary)
     
     
-    def evaluate_relevance_to_price_changes(self, news_title: str) -> str:
+    def evaluate_relevance_to_price_changes(self, news_title: str) -> RelevanceLevel:
         relevance = self._ask(
             system_prompt="你是一個關聯度評估機器人，請評估新聞標題是否與「民生用品的價格變化」相關，並給予'high'、'medium'、'low'評價。(僅需回答'high'、'medium'、'low'三個詞之一)",
             user_prompt=news_title
         )
-        return relevance
+        return RelevanceLevel(relevance)

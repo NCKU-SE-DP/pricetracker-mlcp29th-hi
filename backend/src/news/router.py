@@ -24,11 +24,7 @@ async def search_news(search_query: SearchRequestSchema):
 
 @router.post("/news_summary")
 async def summarize_news(news: NewsSummaryRequestSchema, user: CurrentLoggedInUser):
-    summary = service.summarize_news(news.content)
-    news_summary = {}
-    news_summary["summary"] = summary["影響"]
-    news_summary["reason"] = summary["原因"]
-    return news_summary
+    return service.summarize_news(news.content)
 
 
 @router.post("/{news_id}/upvote")

@@ -1,8 +1,7 @@
 import itertools
-import json
+import requests
 from urllib.parse import quote
 
-import requests
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
@@ -10,7 +9,7 @@ from .config import configuration
 from ..models import NewsArticle, User, user_news_association_table
 from ..crawler.crawler_base import NewsSnapshot, NewsWithSummary
 from ..crawler.udn_crawler import UDNCrawler
-from ..llm_client.openai_client import OpenAIClient
+from ..llm_client.openai_client import NewsSummary, OpenAIClient, RelevanceLevel
 
 
 _news_id_counter = itertools.count(start=1000000)
@@ -100,7 +99,7 @@ def download_price_changes_news(database: Session, is_initial=False):
     news_snapshots = _search("價格", is_initial=is_initial)
     for snapshot in news_snapshots:
         relevance = _openai_client.evaluate_relevance_to_price_changes(snapshot.title)
-        if relevance == "high":
+        if relevance == RelevanceLevel.HIGH:
             news = _crawler.validate_and_parse(snapshot.url)
             summary = _openai_client.summarize_news(news.content)
             news_with_summary = NewsWithSummary(
@@ -110,5 +109,5 @@ def download_price_changes_news(database: Session, is_initial=False):
             _crawler.save(news_with_summary, database)
 
 
-def summarize_news(news_content: str):
+def summarize_news(news_content: str) -> NewsSummary:
     return _openai_client.summarize_news(news_content)
