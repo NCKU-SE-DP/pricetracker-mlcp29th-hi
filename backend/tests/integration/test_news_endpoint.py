@@ -8,7 +8,8 @@ from src.crawler.crawler_base import NewsSnapshot
 from src.database import get_database
 from src.main import app
 from src.models import Base, NewsArticle, User
-from src.news.schemas import NewsSummaryRequestSchema
+from src.news.schemas import NewsSummaryRequestSchema, NewsSummaryCustomModelRequestSchema
+from src.llm_client.clients import AnthropicClient, OpenAIClient
 from src.user import service as user_service
 from unittest.mock import Mock
 
@@ -111,8 +112,6 @@ def test_read_user_news(test_user, test_token, test_articles):
     assert json_response[1]["is_upvoted"] is False
 
 def mock_llm(mocker, return_content):
-    mock_llm_client = mocker.patch('src.news.service._llm_client._client')
-
     mock_message = Mock()
     mock_message.content = return_content
 
@@ -122,9 +121,18 @@ def mock_llm(mocker, return_content):
     mock_completion = Mock()
     mock_completion.choices = [mock_choice]
 
-    mock_llm_client.chat.completions.create.return_value = mock_completion
+    mock_client = Mock()
+    mock_client.chat_completions.create.return_value = mock_completion
 
-    return mock_llm_client
+    mock_llm_client = mocker.patch("src.news.service._llm_client")
+    mock_llm_client._client = mock_client
+
+    mock_class = mocker.patch("src.news.service.OpenAIClient._ask")
+    mock_class.return_value = return_content
+
+    mock_class = mocker.patch("src.news.service.AnthropicClient._ask")
+    mock_class.return_value = return_content
+
 
 def test_search_news(mocker):
     mock_llm(mocker, "keywords")
@@ -165,6 +173,34 @@ def test_news_summary(mocker, test_token):
 
     request_body = NewsSummaryRequestSchema(content="Test news content")
     response = client.post("/api/v1/news/news_summary", json=request_body.model_dump(), headers=headers)
+
+    assert response.status_code == 200
+    json_response = response.json()
+    assert json_response["summary"] == "test impact"
+    assert json_response["reason"] == "test reason"
+
+
+def test_news_summary_with_openai(mocker, test_token):
+    headers = {"Authorization": f"Bearer {test_token}"}
+    llm_response = json.dumps({"影響": "test impact", "原因": "test reason"})
+    mock_llm(mocker, llm_response)
+
+    request_body = NewsSummaryCustomModelRequestSchema(content="Test news content", ai_model="openai")
+    response = client.post("/api/v1/news/news_summary_custom_model", json=request_body.model_dump(), headers=headers)
+
+    assert response.status_code == 200
+    json_response = response.json()
+    assert json_response["summary"] == "test impact"
+    assert json_response["reason"] == "test reason"
+
+
+def test_news_summary_with_anthropic(mocker, test_token):
+    headers = {"Authorization": f"Bearer {test_token}"}
+    llm_response = json.dumps({"影響": "test impact", "原因": "test reason"})
+    mock_llm(mocker, llm_response)
+
+    request_body = NewsSummaryCustomModelRequestSchema(content="Test news content", ai_model="anthropic")
+    response = client.post("/api/v1/news/news_summary_custom_model", json=request_body.model_dump(), headers=headers)
 
     assert response.status_code == 200
     json_response = response.json()
