@@ -21,7 +21,7 @@ class TestOpenAIClient(unittest.TestCase):
 
     @unittest.skipIf(not RUN_REAL_API_TESTS, "模擬 API 呼叫，跳過真實測試")
     def test_summarize_news_real(self):
-        result = self.client.summarize_news("一篇有關食品價格的新聞內容")
+        result = self.client.summarize_news("一篇有關食品價格的新聞內容").model_dump()
         self.assertIn("summary", result)
         self.assertIn("reason", result)
 
