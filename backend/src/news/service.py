@@ -8,8 +8,9 @@ from .config import configuration
 from ..models import NewsArticle, User, user_news_association_table
 from ..crawler.crawler_base import NewsSnapshot, NewsWithSummary
 from ..crawler.udn_crawler import UDNCrawler
-from ..llm_client.base import NewsSummary, RelevanceLevel
-from ..llm_client.clients import OpenAIClient
+from ..llm_client.base import LLMClientTemplate, NewsSummary
+from ..llm_client.clients import AnthropicClient, OpenAIClient
+from ..llm_client.constants import RelevanceLevel
 
 
 _news_id_counter = itertools.count(start=1000000)

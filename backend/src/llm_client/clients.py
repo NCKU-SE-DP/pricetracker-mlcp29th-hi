@@ -1,4 +1,5 @@
-from .base import LLMClientModel, LLMClientTemplate
+from .base import LLMClientTemplate
+from .constants import LLMClientModel
 
 
 class OpenAIClient(LLMClientTemplate):

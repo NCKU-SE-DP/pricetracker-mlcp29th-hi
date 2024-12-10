@@ -1,8 +1,9 @@
 import unittest
 import os
 from unittest.mock import patch
-from src.llm_client.base import NewsSummary, RelevanceLevel
-from src.llm_client.openai_client import OpenAIClient
+from src.llm_client.base import NewsSummary
+from src.llm_client.clients import OpenAIClient
+from src.llm_client.constants import LLMSystemPrompt, RelevanceLevel
 
 # 除非確認要使用真實的API進行測試(當然會因此擁有額外的開銷)，否則將RUN_REAL_API_TESTS設置為False
 RUN_REAL_API_TESTS = os.getenv("RUN_REAL_API_TESTS", "false").lower() == "true"
@@ -42,7 +43,7 @@ class TestOpenAIClient(unittest.TestCase):
         self.assertEqual(result, RelevanceLevel.HIGH)
 
         mock_generate_text.assert_called_once_with(
-            system_prompt="你是一個關聯度評估機器人，請評估新聞標題是否與「民生用品的價格變化」相關，並給予'high'、'medium'、'low'評價。(僅需回答'high'、'medium'、'low'三個詞之一)",
+            system_prompt=LLMSystemPrompt.RELEVANCE_EVALUATION.value,
             user_prompt="食品價格上漲"
         )
 
@@ -55,7 +56,7 @@ class TestOpenAIClient(unittest.TestCase):
         self.assertEqual(result, NewsSummary.model_validate_json('{"影響": "影響描述", "原因": "原因描述"}'))
 
         mock_generate_text.assert_called_once_with(
-            system_prompt="你是一個新聞摘要生成機器人，請統整新聞中提及的影響及主要原因 (影響、原因各50個字，請以json格式回答 {'影響': '...', '原因': '...'})",
+            system_prompt=LLMSystemPrompt.NEWS_SUMMARY.value,
             user_prompt="一篇新聞內容"
         )
 
@@ -68,7 +69,7 @@ class TestOpenAIClient(unittest.TestCase):
         self.assertEqual(result, '食品 價格')
 
         mock_generate_text.assert_called_once_with(
-            system_prompt="你是一個關鍵字提取機器人，用戶將會輸入一段文字，表示其希望看見的新聞內容，請提取出用戶希望看見的關鍵字，請截取最重要的關鍵字即可，避免出現「新聞」、「資訊」等混淆搜尋引擎的字詞。(僅須回答關鍵字，若有多個關鍵字，請以空格分隔)",
+            system_prompt=LLMSystemPrompt.SEARCH_KEYWORD_EXTRACTION.value,
             user_prompt="一段希望看到的新聞文字"
         )
 
