@@ -1,11 +1,11 @@
 import itertools
-from typing import Literal
 from urllib.parse import quote
 
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
 from .config import configuration
+from .constants import AIModel
 from ..models import NewsArticle, User, user_news_association_table
 from ..crawler.crawler_base import NewsSnapshot, NewsWithSummary
 from ..crawler.udn_crawler import UDNCrawler
@@ -112,10 +112,10 @@ def download_price_changes_news(database: Session, is_initial=False):
             _crawler.save(news_with_summary, database)
 
 
-def summarize_news(news_content: str, ai_model: Literal["openai", "anthropic"] = "openai") -> NewsSummary:
+def summarize_news(news_content: str, ai_model: AIModel = AIModel.OPENAI) -> NewsSummary:
     llm_client_types = {
-        "openai"   : OpenAIClient,
-        "anthropic": AnthropicClient
+        AIModel.OPENAI   : OpenAIClient,
+        AIModel.ANTHROPIC: AnthropicClient
     }
     client: LLMClientTemplate = llm_client_types[ai_model]()
     return client.summarize_news(news_content)

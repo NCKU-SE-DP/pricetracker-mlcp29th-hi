@@ -1,6 +1,6 @@
-from typing import Literal
-
 from pydantic import BaseModel
+
+from .constants import AIModel
 
 
 class SearchRequestSchema(BaseModel):
@@ -13,4 +13,4 @@ class NewsSummaryRequestSchema(BaseModel):
 
 class NewsSummaryCustomModelRequestSchema(BaseModel):
     content: str
-    ai_model: Literal["openai", "anthropic"]
+    ai_model: AIModel
