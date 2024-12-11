@@ -1,14 +1,9 @@
 import abc
 
 import aisuite
-from pydantic import BaseModel, Field
 
 from .constants import LLMClientModel, LLMSystemPrompt, RelevanceLevel
-
-
-class NewsSummary(BaseModel):
-    summary: str = Field(validation_alias="影響")
-    reason:  str = Field(validation_alias="原因")
+from .schemas import NewsSummary
 
 
 class LLMClientBase(metaclass=abc.ABCMeta):

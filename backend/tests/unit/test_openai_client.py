@@ -1,9 +1,9 @@
 import unittest
 import os
 from unittest.mock import patch
-from src.llm_client.base import NewsSummary
 from src.llm_client.clients import OpenAIClient
 from src.llm_client.constants import LLMSystemPrompt, RelevanceLevel
+from src.llm_client.schemas import NewsSummary
 
 # 除非確認要使用真實的API進行測試(當然會因此擁有額外的開銷)，否則將RUN_REAL_API_TESTS設置為False
 RUN_REAL_API_TESTS = os.getenv("RUN_REAL_API_TESTS", "false").lower() == "true"

@@ -9,7 +9,6 @@ from src.database import get_database
 from src.main import app
 from src.models import Base, NewsArticle, User
 from src.news.schemas import NewsSummaryRequestSchema, NewsSummaryCustomModelRequestSchema
-from src.llm_client.clients import AnthropicClient, OpenAIClient
 from src.user import service as user_service
 from unittest.mock import Mock
 
