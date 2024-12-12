@@ -1,9 +1,7 @@
 import itertools
-import json
+import requests
 from urllib.parse import quote
 
-from openai import OpenAI
-import requests
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
@@ -11,10 +9,13 @@ from .config import configuration
 from ..models import NewsArticle, User, user_news_association_table
 from ..crawler.crawler_base import NewsSnapshot, NewsWithSummary
 from ..crawler.udn_crawler import UDNCrawler
+from ..llm_client.base import NewsSummary, RelevanceLevel
+from ..llm_client.openai_client import OpenAIClient
 
 
 _news_id_counter = itertools.count(start=1000000)
 _crawler = UDNCrawler()
+_openai_client = OpenAIClient()
 
 
 def _generate_news_id() -> int:
@@ -38,27 +39,6 @@ def _get_upvote_status(news_id: int, user_id: int, database: Session) -> tuple[i
     return upvote_users_count, does_user_upvote
 
 
-def _ask_OpenAI(system_prompt: str, user_prompt: str) -> str | None:
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt}
-    ]
-    completion = OpenAI(api_key=configuration.open_ai_api_key).chat.completions.create(
-        model=configuration.open_ai_model,
-        messages=messages
-    )
-    response = completion.choices[0].message.content
-    return response
-
-
-def _extract_search_keywords(news_expectation: str) -> str | None:
-    keywords = _ask_OpenAI(
-        system_prompt="你是一個關鍵字提取機器人，用戶將會輸入一段文字，表示其希望看見的新聞內容，請提取出用戶希望看見的關鍵字，請截取最重要的關鍵字即可，避免出現「新聞」、「資訊」等混淆搜尋引擎的字詞。(僅須回答關鍵字，若有多個關鍵字，請以空格分隔)",
-        user_prompt=news_expectation
-    )
-    return keywords
-
-
 def _search(search_term: str, is_initial=False) -> list[NewsSnapshot]:
     if is_initial:
         return _crawler.search_initially(search_term)
@@ -78,7 +58,7 @@ def retrieve_news_with_upvote_status(database: Session, user: User | None) -> li
 
 def search_news(prompt: str) -> list[dict]:
     news_list = []
-    keywords = _extract_search_keywords(prompt)
+    keywords = _openai_client.extract_search_keywords(prompt)
     # TODO: should change into simple factory pattern
     news_snapshots = _search(keywords, is_initial=False)
     for snapshot in news_snapshots:
@@ -89,14 +69,6 @@ def search_news(prompt: str) -> list[dict]:
         except Exception as exception:
             print(exception)
     return sorted(news_list, key=lambda x: x["time"], reverse=True)
-
-
-def summarize_news(content: str) -> dict:
-    summary = _ask_OpenAI(
-        system_prompt="你是一個新聞摘要生成機器人，請統整新聞中提及的影響及主要原因 (影響、原因各50個字，請以json格式回答 {'影響': '...', '原因': '...'})",
-        user_prompt=content
-    )
-    return json.loads(summary)
 
 
 def toggle_upvote(news_id: int, user_id: int, database: Session) -> str:
@@ -127,19 +99,16 @@ def toggle_upvote(news_id: int, user_id: int, database: Session) -> str:
 def download_price_changes_news(database: Session, is_initial=False):
     news_snapshots = _search("價格", is_initial=is_initial)
     for snapshot in news_snapshots:
-        relevance = _ask_OpenAI(
-            system_prompt="你是一個關聯度評估機器人，請評估新聞標題是否與「民生用品的價格變化」相關，並給予'high'、'medium'、'low'評價。(僅需回答'high'、'medium'、'low'三個詞之一)",
-            user_prompt=snapshot["title"]
-        )
-        if relevance == "high":
+        relevance = _openai_client.evaluate_relevance_to_price_changes(snapshot.title)
+        if relevance == RelevanceLevel.HIGH:
             news = _crawler.validate_and_parse(snapshot.url)
-            summary = summarize_news(news.content)
+            summary = _openai_client.summarize_news(news.content)
             news_with_summary = NewsWithSummary(
-                title=news.title,
-                url=news.url,
-                time=news.time,
-                content=news.content,
-                summary=summary["影響"],
-                reason=summary["原因"]
+                **news.model_dump(),
+                **summary.model_dump()
             )
             _crawler.save(news_with_summary, database)
+
+
+def summarize_news(news_content: str) -> NewsSummary:
+    return _openai_client.summarize_news(news_content)
