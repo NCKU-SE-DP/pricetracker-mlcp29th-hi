@@ -1,15 +1,11 @@
 from fastapi import APIRouter, Query
-import requests
+
+from . import service
 
 
 router = APIRouter(prefix="/api/v1/prices")
 
 
 @router.get("/necessities-price")
-def read_necessities_prices(
-        category=Query(None), commodity=Query(None)
-):
-    return requests.get(
-        "https://opendata.ey.gov.tw/api/ConsumerProtection/NecessitiesPrice",
-        params={"CategoryName": category, "Name": commodity},
-    ).json()
+def read_necessities_prices(category=Query(None), commodity=Query(None)):
+    return service.fetch_necessities_prices(category, commodity)
