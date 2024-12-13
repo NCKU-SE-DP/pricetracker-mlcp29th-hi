@@ -1,5 +1,4 @@
 import itertools
-import requests
 from urllib.parse import quote
 
 from sqlalchemy import delete, insert, select

@@ -37,7 +37,6 @@ import requests
 from requests import Response
 from sqlalchemy.orm import Session
 from urllib.parse import quote
-from urllib.parse import quote
 
 from .crawler_base import NewsCrawlerBase, NewsSnapshot, News, NewsWithSummary
 from ..models import NewsArticle
@@ -66,7 +65,10 @@ class UDNCrawler(NewsCrawlerBase):
         self, search_term: str, page: int | tuple[int, int]
     ) -> list[NewsSnapshot]:
         page_range = range(page, page + 1) if isinstance(page, int) else range(page[0], page[1] + 1)
-        return [self._perform_search(page, search_term) for page in page_range]
+        snapshots = []
+        for page in page_range:
+            snapshots.extend(self._perform_search(page, search_term))
+        return snapshots
 
     def save(self, news: NewsWithSummary, db: Session):
         existing_news = db.query(NewsArticle).filter_by(content = news.content).first()

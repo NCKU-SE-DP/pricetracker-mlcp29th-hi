@@ -25,7 +25,7 @@ def start_scheduler():
     database = get_database_with_auto_persist_changes_disabled()
     if database.query(NewsArticle).count() == 0:
         # TODO: should change into simple factory pattern
-        news_service.download_price_changes_news()
+        news_service.download_price_changes_news(database)
     database.close()
 
     def job():
