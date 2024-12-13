@@ -1,4 +1,5 @@
 import abc
+from typing import override
 
 import aisuite
 
@@ -19,6 +20,7 @@ class LLMClientTemplate(LLMClientBase, abc.ABC):
         self._client = aisuite.Client()
 
 
+    @override
     def _ask(self, system_prompt: str, user_prompt: str) -> str | None:
         completion = self._client.chat.completions.create(
             model=self._model().value,
@@ -30,6 +32,7 @@ class LLMClientTemplate(LLMClientBase, abc.ABC):
         return completion.choices[0].message.content
 
 
+    @override
     def extract_search_keywords(self, news_expectation: str) -> str | None:
         keywords = self._ask(
             system_prompt=LLMSystemPrompt.SEARCH_KEYWORD_EXTRACTION.value,
@@ -38,6 +41,7 @@ class LLMClientTemplate(LLMClientBase, abc.ABC):
         return keywords
 
 
+    @override
     def summarize_news(self, content: str) -> NewsSummary:
         summary = self._ask(
             system_prompt=LLMSystemPrompt.NEWS_SUMMARY.value,
@@ -46,6 +50,7 @@ class LLMClientTemplate(LLMClientBase, abc.ABC):
         return NewsSummary.model_validate_json(summary)
 
 
+    @override
     def evaluate_relevance_to_price_changes(self, news_title: str) -> RelevanceLevel:
         relevance = self._ask(
             system_prompt=LLMSystemPrompt.RELEVANCE_EVALUATION.value,
