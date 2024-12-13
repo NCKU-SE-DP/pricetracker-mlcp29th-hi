@@ -133,7 +133,7 @@ def test_search_news(mocker):
         NewsSnapshot(title="Title of the article", titleLink="https://udn.com/news/story/7240/8383719")
     ])
 
-    mock_get = mocker.patch("src.news.service.requests.get", return_value=mocker.Mock(
+    mock_get = mocker.patch("src.crawler.udn_crawler.requests.get", return_value=mocker.Mock(
         text="""
         <html>
         <h1 class="article-content__title">Test Title</h1>
