@@ -35,10 +35,12 @@ from bs4 import BeautifulSoup
 from pydantic import TypeAdapter
 import requests
 from requests import Response
+from sentry_sdk import capture_exception
 from sqlalchemy.orm import Session
 from urllib.parse import quote
 
 from .crawler_base import NewsCrawlerBase, NewsSnapshot, News, NewsWithSummary
+from .exceptions import NewsExtractionError
 from ..models import NewsArticle
 
 
@@ -107,16 +109,19 @@ class UDNCrawler(NewsCrawlerBase):
     
     @staticmethod
     def _extract_news(soup: BeautifulSoup, url: str) -> News:
-        title = soup.find("h1", class_="article-content__title").text
-        time = soup.find("time", class_="article-content__time").text
-        content_section = soup.find("section", class_="article-content__editor")
-        paragraphs = [
-            paragraph.text
-            for paragraph in content_section.find_all("p")
-            if paragraph.text.strip() != "" and "▪" not in paragraph.text
-        ]
-        content = " ".join(paragraphs)
-        return News(title=title, url=url, time=time, content=content)
+        try:
+            title = soup.find("h1", class_="article-content__title").text
+            time = soup.find("time", class_="article-content__time").text
+            content_section = soup.find("section", class_="article-content__editor")
+            paragraphs = [
+                paragraph.text
+                for paragraph in content_section.find_all("p")
+                if paragraph.text.strip() != "" and "▪" not in paragraph.text
+            ]
+            content = " ".join(paragraphs)
+            return News(title=title, url=url, time=time, content=content)
+        except AttributeError as exception:
+            raise NewsExtractionError
 
     def _perform_request(self, url: str | None = None, params: dict | None = None) -> Response:
         return requests.get(url=url, params=params, timeout=self.timeout)
