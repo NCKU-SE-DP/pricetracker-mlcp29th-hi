@@ -64,12 +64,9 @@ def search_news(prompt: str) -> list[dict]:
     # TODO: should change into simple factory pattern
     news_snapshots = _search(keywords, is_initial=False)
     for snapshot in news_snapshots:
-        try:
-            news = _crawler.validate_and_parse(snapshot.url).model_dump()
-            news["id"] = _generate_news_id()
-            news_list.append(news)
-        except Exception as exception:
-            print(exception)
+        news = _crawler.validate_and_parse(snapshot.url).model_dump()
+        news["id"] = _generate_news_id()
+        news_list.append(news)
     return sorted(news_list, key=lambda x: x["time"], reverse=True)
 
 
