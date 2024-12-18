@@ -1,6 +1,7 @@
 import itertools
 from urllib.parse import quote
 
+from sentry_sdk import capture_exception
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
@@ -8,6 +9,7 @@ from .config import configuration
 from .constants import AIModel
 from ..models import NewsArticle, User, user_news_association_table
 from ..crawler.crawler_base import NewsSnapshot, NewsWithSummary
+from ..crawler.exceptions import NewsExtractionError
 from ..crawler.udn_crawler import UDNCrawler
 from ..llm_client.clients import AnthropicClient, OpenAIClient
 from ..llm_client.constants import RelevanceLevel
@@ -64,9 +66,12 @@ def search_news(prompt: str) -> list[dict]:
     # TODO: should change into simple factory pattern
     news_snapshots = _search(keywords, is_initial=False)
     for snapshot in news_snapshots:
-        news = _crawler.validate_and_parse(snapshot.url).model_dump()
-        news["id"] = _generate_news_id()
-        news_list.append(news)
+        try:
+            news = _crawler.validate_and_parse(snapshot.url).model_dump()
+            news["id"] = _generate_news_id()
+            news_list.append(news)
+        except NewsExtractionError as exception: 
+            capture_exception(exception)
     return sorted(news_list, key=lambda x: x["time"], reverse=True)
 
 
