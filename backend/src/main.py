@@ -16,6 +16,8 @@ from .price.router import router as price_api_router
 from .user import exception_handlers as user_exception_handler
 from .user.router import router as user_api_router
 
+from . import exception_handlers
+
 
 sentry_sdk.init(
     dsn=configuration.sentry_dsn,
@@ -65,7 +67,7 @@ app.include_router(user_api_router)
 app.include_router(news_api_router)
 app.include_router(price_api_router)
 
-
+exception_handlers.attach_to(app)
 crawler_exception_handlers.attach_to(app)
 llm_client_exception_handlers.attach_to(app)
 user_exception_handler.attach_to(app)
