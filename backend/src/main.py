@@ -11,6 +11,7 @@ from .models import NewsArticle
 from .news import service as news_service
 from .news.router import router as news_api_router
 from .price.router import router as price_api_router
+from .user import exception_handlers as user_exception_handler
 from .user.router import router as user_api_router
 
 
@@ -61,3 +62,6 @@ app.add_middleware(
 app.include_router(user_api_router)
 app.include_router(news_api_router)
 app.include_router(price_api_router)
+
+
+user_exception_handler.attach_to(app)
