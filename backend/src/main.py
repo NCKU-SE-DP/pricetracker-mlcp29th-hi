@@ -8,6 +8,7 @@ import sentry_sdk
 from .config import configuration
 from .crawler import exception_handlers as crawler_exception_handlers
 from .database import get_database, get_database_with_auto_persist_changes_disabled
+from .llm_client import exception_handlers as llm_client_exception_handlers
 from .models import NewsArticle
 from .news import service as news_service
 from .news.router import router as news_api_router
@@ -65,5 +66,6 @@ app.include_router(news_api_router)
 app.include_router(price_api_router)
 
 
-user_exception_handler.attach_to(app)
 crawler_exception_handlers.attach_to(app)
+llm_client_exception_handlers.attach_to(app)
+user_exception_handler.attach_to(app)
