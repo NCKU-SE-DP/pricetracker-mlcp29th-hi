@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from src.models import User
 from .config import configuration
+from .exceptions import InvalidCredentialsError
 
 
 _password_context = CryptContext(schemes=[configuration.password_hashing_algorithm], deprecated=["auto"])
@@ -19,16 +20,16 @@ def _is_password_correct(password, existing_password_hash) -> bool:
     return _password_context.verify(password, existing_password_hash)
 
 
-def _retrieve_user_by_credentials(database, username, password) -> User | None:
+def _retrieve_user_by_credentials(database, username, password) -> User:
     user = database.query(User).filter(User.username == username).first()
-    if not _is_password_correct(password, user.hashed_password):
-        return None
+    if user is None or not _is_password_correct(password, user.hashed_password):
+        raise InvalidCredentialsError
     return user
 
 
 def _create_access_token(claims, valid_duration=None) -> str:
     claims = claims.copy()
-    if valid_duration:
+    if valid_duration is not None:
         expiration_time = datetime.now() + valid_duration
     else:
         expiration_time = datetime.now() + timedelta(minutes=configuration.access_token_valid_duration)
