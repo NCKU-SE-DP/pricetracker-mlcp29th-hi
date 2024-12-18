@@ -4,14 +4,18 @@ from requests.exceptions import RequestException
 from sentry_sdk import capture_exception
 from sqlalchemy.exc import SQLAlchemyError
 
+from .logger import Logger
+
 
 def _request_exception_handler(request: Request, exception: RequestException):
     capture_exception(exception)
+    Logger().log_error(exception)
     return PlainTextResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def _sqlalchemy_error_handler(request: Request, exception: SQLAlchemyError):
     capture_exception(exception)
+    Logger().log_error(exception)
     return PlainTextResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
