@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import sentry_sdk
 
 from .config import configuration
+from .crawler import exception_handlers as crawler_exception_handlers
 from .database import get_database, get_database_with_auto_persist_changes_disabled
 from .models import NewsArticle
 from .news import service as news_service
@@ -65,3 +66,4 @@ app.include_router(price_api_router)
 
 
 user_exception_handler.attach_to(app)
+crawler_exception_handlers.attach_to(app)
