@@ -3,10 +3,12 @@ from fastapi.responses import PlainTextResponse
 from sentry_sdk import capture_exception
 
 from .exceptions import LLMResponseFormatError
+from ..logger import Logger
 
 
 def _llm_response_format_error_handler(request: Request, exception: LLMResponseFormatError):
     capture_exception(exception)
+    Logger().log_error(exception)
     return PlainTextResponse("Something went wrong. Please try again later.", status_code=status.HTTP_502_BAD_GATEWAY)
 
 

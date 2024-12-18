@@ -3,10 +3,12 @@ from fastapi.responses import PlainTextResponse
 from sentry_sdk import capture_exception
 
 from .exceptions import DomainMismatchException
+from ..logger import Logger
 
 
 def _domain_mismatch_exception_handler(request: Request, exception: DomainMismatchException):
     capture_exception(exception)
+    Logger().log_error(exception)
     return PlainTextResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
