@@ -36,6 +36,7 @@ from pydantic import TypeAdapter
 import requests
 from requests import Response
 from sentry_sdk import capture_exception
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from urllib.parse import quote
 
@@ -77,8 +78,9 @@ class UDNCrawler(NewsCrawlerBase):
         if existing_news is None:
             try:
                 db.add(NewsArticle(**news.model_dump()))
-            except:
+            except SQLAlchemyError:
                 db.rollback()
+                raise
             else:
                 db.commit()
 
