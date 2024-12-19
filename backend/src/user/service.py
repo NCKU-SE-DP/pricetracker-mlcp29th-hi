@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from src.models import User
 from .config import configuration
-from .exceptions import InvalidCredentialsError
+from .exceptions import InvalidCredentialsError, UsernameNotAvailableError
 
 
 _password_context = CryptContext(schemes=[configuration.password_hashing_algorithm], deprecated=["auto"])
@@ -47,6 +47,9 @@ def login(database: Session, username: str, password: str) -> dict:
 
 
 def register_user(database: Session, username: str, password: str) -> User:
+    is_username_available = database.query(User).filter(User.username == username).first() is None
+    if not is_username_available:
+        raise UsernameNotAvailableError(username)
     hashed_password = _hash_password(password)
     new_user = User(username=username, hashed_password=hashed_password)
     database.add(new_user)
