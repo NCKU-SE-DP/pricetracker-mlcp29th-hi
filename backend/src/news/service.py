@@ -5,16 +5,19 @@ from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
 from .config import configuration
+from .constants import AIModel
 from ..models import NewsArticle, User, user_news_association_table
 from ..crawler.crawler_base import NewsSnapshot, NewsWithSummary
 from ..crawler.udn_crawler import UDNCrawler
-from ..llm_client.base import NewsSummary, RelevanceLevel
-from ..llm_client.openai_client import OpenAIClient
+from ..llm_client.clients import AnthropicClient, OpenAIClient
+from ..llm_client.constants import RelevanceLevel
+from ..llm_client.schemas import NewsSummary
+from ..llm_client.template import LLMClientTemplate
 
 
 _news_id_counter = itertools.count(start=1000000)
 _crawler = UDNCrawler()
-_openai_client = OpenAIClient()
+_llm_client = OpenAIClient()
 
 
 def _generate_news_id() -> int:
@@ -57,7 +60,7 @@ def retrieve_news_with_upvote_status(database: Session, user: User | None) -> li
 
 def search_news(prompt: str) -> list[dict]:
     news_list = []
-    keywords = _openai_client.extract_search_keywords(prompt)
+    keywords = _llm_client.extract_search_keywords(prompt)
     # TODO: should change into simple factory pattern
     news_snapshots = _search(keywords, is_initial=False)
     for snapshot in news_snapshots:
@@ -98,10 +101,10 @@ def toggle_upvote(news_id: int, user_id: int, database: Session) -> str:
 def download_price_changes_news(database: Session, is_initial=False):
     news_snapshots = _search("價格", is_initial=is_initial)
     for snapshot in news_snapshots:
-        relevance = _openai_client.evaluate_relevance_to_price_changes(snapshot.title)
+        relevance = _llm_client.evaluate_relevance_to_price_changes(snapshot.title)
         if relevance == RelevanceLevel.HIGH:
             news = _crawler.validate_and_parse(snapshot.url)
-            summary = _openai_client.summarize_news(news.content)
+            summary = _llm_client.summarize_news(news.content)
             news_with_summary = NewsWithSummary(
                 **news.model_dump(),
                 **summary.model_dump()
@@ -109,5 +112,10 @@ def download_price_changes_news(database: Session, is_initial=False):
             _crawler.save(news_with_summary, database)
 
 
-def summarize_news(news_content: str) -> NewsSummary:
-    return _openai_client.summarize_news(news_content)
+def summarize_news(news_content: str, ai_model: AIModel = AIModel.OPENAI) -> NewsSummary:
+    llm_client_types = {
+        AIModel.OPENAI   : OpenAIClient,
+        AIModel.ANTHROPIC: AnthropicClient
+    }
+    client: LLMClientTemplate = llm_client_types[ai_model]()
+    return client.summarize_news(news_content)

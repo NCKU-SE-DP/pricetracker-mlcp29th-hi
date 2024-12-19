@@ -10,7 +10,7 @@ class Configuration(BaseSettings):
     model_config = SettingsConfigDict(env_file=_env_file_path, extra="ignore")
 
     news_snapshot_api: str = "https://udn.com/api/more"
-    open_ai_api_key  : str
+    openai_api_key   : str
     open_ai_model    : str = "gpt-3.5-turbo"
 
 
