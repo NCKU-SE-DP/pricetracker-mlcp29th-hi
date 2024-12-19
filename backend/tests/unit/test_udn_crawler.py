@@ -1,8 +1,9 @@
+from bs4 import BeautifulSoup
 import unittest
 from unittest.mock import patch, MagicMock
 from requests.models import Response
 from sqlalchemy.orm import Session
-from src.crawler.exceptions import DomainMismatchException
+from src.crawler.exceptions import DomainMismatchException, NewsExtractionError
 from src.crawler.udn_crawler import UDNCrawler, NewsWithSummary
 
 
@@ -10,6 +11,7 @@ class TestUDNCrawler(unittest.TestCase):
 
     def setUp(self):
         self.scraper = UDNCrawler(timeout=5)
+
 
     @patch("src.crawler.udn_crawler.requests.get")
     def test_perform_request_success(self, mock_get):
@@ -21,11 +23,13 @@ class TestUDNCrawler(unittest.TestCase):
         self.assertEqual(response, mock_response)
         mock_get.assert_called_once()
 
+
     @patch("src.crawler.udn_crawler.requests.get")
     def test_perform_request_failure(self, mock_get):
         mock_get.side_effect = Exception("Network Error")
         with self.assertRaises(Exception):
             self.scraper._perform_request(params={"page": 1, "id": "search:technology"})
+
 
     @patch("src.crawler.udn_crawler.requests.get")
     def test_perform_search(self, mock_get):
@@ -40,6 +44,7 @@ class TestUDNCrawler(unittest.TestCase):
         self.assertEqual(len(snapshots), 1)
         self.assertEqual(snapshots[0].title, "Test News")
         self.assertEqual(snapshots[0].url, "https://udn.com/news/test-news")
+
 
     @patch("src.crawler.udn_crawler.requests.get")
     def test_validate_and_parse_news(self, mock_get):
@@ -62,11 +67,19 @@ class TestUDNCrawler(unittest.TestCase):
         self.assertEqual(news.time, "2023-09-08T00:00:00")
         self.assertEqual(news.content, "Content paragraph 1. Content paragraph 2.")
 
+
+    def test_parse_incompatible_html(self):
+        soup = BeautifulSoup("example content", "html.parser")
+        with self.assertRaises(NewsExtractionError):
+            self.scraper._extract_news(soup, "https://example.com")
+
+
     def test_create_search_params(self):
         params = self.scraper._create_search_params(page=1, search_term="technology")
         self.assertEqual(params["page"], 1)
         self.assertEqual(params["id"], "search:technology")
         self.assertEqual(params["channelId"], 2)
+
 
     @patch("src.crawler.udn_crawler.Session")
     def test_save_news(self, mock_session):
@@ -87,12 +100,14 @@ class TestUDNCrawler(unittest.TestCase):
         self.assertEqual(mock_db.add.call_args[0][0].title, "Test Title")
         mock_db.commit.assert_called_once()
 
+
     def test_is_valid_url(self):
         valid_url = "https://udn.com/news/test-news"
         invalid_url = "https://example.com/news/test-news"
 
         self.assertTrue(self.scraper._is_valid_url(valid_url))
         self.assertFalse(self.scraper._is_valid_url(invalid_url))
+
 
     def test_validate_and_parse_invalid_domain(self):
         invalid_url = "https://example.com/news/test-news"

@@ -2,9 +2,11 @@ import abc
 from typing import override
 
 import aisuite
+from pydantic import ValidationError
 
 from .base import LLMClientBase
 from .constants import LLMClientModel, LLMSystemPrompt, RelevanceLevel
+from .exceptions import LLMResponseFormatError
 from .schemas import NewsSummary
 
 
@@ -21,7 +23,7 @@ class LLMClientTemplate(LLMClientBase, abc.ABC):
 
 
     @override
-    def _ask(self, system_prompt: str, user_prompt: str) -> str | None:
+    def _ask(self, system_prompt: str, user_prompt: str) -> str:
         completion = self._client.chat.completions.create(
             model=self._model().value,
             messages=[
@@ -29,11 +31,12 @@ class LLMClientTemplate(LLMClientBase, abc.ABC):
                 {"role": "user", "content": user_prompt}
             ]
         )
-        return completion.choices[0].message.content
+        content = completion.choices[0].message.content
+        return "" if content is None else content
 
 
     @override
-    def extract_search_keywords(self, news_expectation: str) -> str | None:
+    def extract_search_keywords(self, news_expectation: str) -> str:
         keywords = self._ask(
             system_prompt=LLMSystemPrompt.SEARCH_KEYWORD_EXTRACTION.value,
             user_prompt=news_expectation
@@ -47,7 +50,10 @@ class LLMClientTemplate(LLMClientBase, abc.ABC):
             system_prompt=LLMSystemPrompt.NEWS_SUMMARY.value,
             user_prompt=content
         )
-        return NewsSummary.model_validate_json(summary)
+        try:
+            return NewsSummary.model_validate_json(summary)
+        except ValidationError:
+            raise LLMResponseFormatError
 
 
     @override
@@ -56,4 +62,7 @@ class LLMClientTemplate(LLMClientBase, abc.ABC):
             system_prompt=LLMSystemPrompt.RELEVANCE_EVALUATION.value,
             user_prompt=news_title
         )
-        return RelevanceLevel(relevance)
+        try:
+            return RelevanceLevel(relevance)
+        except:
+            raise LLMResponseFormatError
