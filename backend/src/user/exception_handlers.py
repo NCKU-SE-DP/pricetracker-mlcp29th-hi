@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import PlainTextResponse
 from sentry_sdk import capture_exception
 
-from .exceptions import AuthenticationError
+from .exceptions import AuthenticationError, RegistrationError
 
 
 def _authentication_error_handler(request: Request, exception: AuthenticationError):
@@ -10,5 +10,11 @@ def _authentication_error_handler(request: Request, exception: AuthenticationErr
     return PlainTextResponse(exception.message, status_code=status.HTTP_401_UNAUTHORIZED)
 
 
+def _registration_error_handler(request: Request, exception: RegistrationError):
+    capture_exception(exception)
+    return PlainTextResponse(exception.message, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
 def attach_to(app: FastAPI):
     app.add_exception_handler(AuthenticationError, _authentication_error_handler)
+    app.add_exception_handler(RegistrationError, _registration_error_handler)
