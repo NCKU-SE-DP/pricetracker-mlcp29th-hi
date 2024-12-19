@@ -1,16 +1,16 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .constants import AIModel
 
 
 class SearchRequestSchema(BaseModel):
-    prompt: str
+    prompt: str = Field(min_length=1)
 
 
 class NewsSummaryRequestSchema(BaseModel):
-    content: str
+    content: str = Field(min_length=1)
 
 
 class NewsSummaryCustomModelRequestSchema(BaseModel):
-    content: str
+    content: str = Field(min_length=1)
     ai_model: AIModel
