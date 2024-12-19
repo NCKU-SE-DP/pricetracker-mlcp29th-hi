@@ -13,6 +13,7 @@ from .llm_client import exception_handlers as llm_client_exception_handlers
 from .logger import Logger
 from .models import NewsArticle
 from .news import service as news_service
+from .news import exception_handlers as news_exception_handlers
 from .news.router import router as news_api_router
 from .price.router import router as price_api_router
 from .user import exception_handlers as user_exception_handler
@@ -78,4 +79,5 @@ app.include_router(price_api_router)
 exception_handlers.attach_to(app)
 crawler_exception_handlers.attach_to(app)
 llm_client_exception_handlers.attach_to(app)
+news_exception_handlers.attach_to(app)
 user_exception_handler.attach_to(app)

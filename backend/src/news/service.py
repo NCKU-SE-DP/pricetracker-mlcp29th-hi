@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from .config import configuration
 from .constants import AIModel
+from .exceptions import NewsNotFoundError
 from ..models import NewsArticle, User, user_news_association_table
 from ..crawler.crawler_base import NewsSnapshot, NewsWithSummary
 from ..crawler.exceptions import NewsExtractionError
@@ -76,6 +77,9 @@ def search_news(prompt: str) -> list[dict]:
 
 
 def toggle_upvote(news_id: int, user_id: int, database: Session) -> str:
+    does_news_exist = database.query(NewsArticle).filter(NewsArticle.id == news_id).first() is not None
+    if not does_news_exist:
+        raise NewsNotFoundError
     existing_upvote = database.execute(
         select(user_news_association_table).where(
             user_news_association_table.c.news_articles_id == news_id,

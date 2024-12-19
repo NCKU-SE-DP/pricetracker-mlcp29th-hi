@@ -216,6 +216,14 @@ def test_upvote_article(test_user_and_articles, test_token):
     assert response.json()["message"] == "Article upvoted"
 
 
+def test_upvote_article_invalid_id(test_user_and_articles, test_token):
+    user, articles = test_user_and_articles
+    headers = {"Authorization": f"Bearer {test_token}"}
+
+    response = client.post(f"/api/v1/news/{articles[-1].id + 1}/upvote", headers=headers)
+    assert response.status_code == 404
+
+
 def test_downvote_article(test_user_and_articles, test_token):
     user, articles = test_user_and_articles
     headers = {"Authorization": f"Bearer {test_token}"}
@@ -223,3 +231,11 @@ def test_downvote_article(test_user_and_articles, test_token):
     response = client.post(f"/api/v1/news/{articles[0].id}/upvote", headers=headers)
     assert response.status_code == 200
     assert response.json()["message"] == "Upvote removed"
+
+
+def test_downvote_article_invalid_id(test_user_and_articles, test_token):
+    user, articles = test_user_and_articles
+    headers = {"Authorization": f"Bearer {test_token}"}
+
+    response = client.post(f"/api/v1/news/{articles[-1].id + 1}/upvote", headers=headers)
+    assert response.status_code == 404
