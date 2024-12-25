@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from src.models import User
 from .config import configuration
+from .exceptions import InvalidCredentialsError, UsernameNotAvailableError
 
 
 _password_context = CryptContext(schemes=[configuration.password_hashing_algorithm], deprecated=["auto"])
@@ -19,16 +20,16 @@ def _is_password_correct(password, existing_password_hash) -> bool:
     return _password_context.verify(password, existing_password_hash)
 
 
-def _retrieve_user_by_credentials(database, username, password) -> User | None:
+def _retrieve_user_by_credentials(database, username, password) -> User:
     user = database.query(User).filter(User.username == username).first()
-    if not _is_password_correct(password, user.hashed_password):
-        return None
+    if user is None or not _is_password_correct(password, user.hashed_password):
+        raise InvalidCredentialsError
     return user
 
 
 def _create_access_token(claims, valid_duration=None) -> str:
     claims = claims.copy()
-    if valid_duration:
+    if valid_duration is not None:
         expiration_time = datetime.now() + valid_duration
     else:
         expiration_time = datetime.now() + timedelta(minutes=configuration.access_token_valid_duration)
@@ -46,6 +47,9 @@ def login(database: Session, username: str, password: str) -> dict:
 
 
 def register_user(database: Session, username: str, password: str) -> User:
+    is_username_available = database.query(User).filter(User.username == username).first() is None
+    if not is_username_available:
+        raise UsernameNotAvailableError(username)
     hashed_password = _hash_password(password)
     new_user = User(username=username, hashed_password=hashed_password)
     database.add(new_user)

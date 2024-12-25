@@ -9,3 +9,9 @@ class DomainMismatchException(Exception):
         self.url = url
         self.message = message
         super().__init__(self.message)
+
+
+class NewsExtractionError(Exception):
+    def __init(self):
+        self.message = "Unable to extract the news from the html."
+        super().__init__(self.message)

@@ -1,13 +1,16 @@
 import itertools
 from urllib.parse import quote
 
+from sentry_sdk import capture_exception
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
 from .config import configuration
 from .constants import AIModel
+from .exceptions import NewsNotFoundError
 from ..models import NewsArticle, User, user_news_association_table
 from ..crawler.crawler_base import NewsSnapshot, NewsWithSummary
+from ..crawler.exceptions import NewsExtractionError
 from ..crawler.udn_crawler import UDNCrawler
 from ..llm_client.clients import AnthropicClient, OpenAIClient
 from ..llm_client.constants import RelevanceLevel
@@ -68,12 +71,15 @@ def search_news(prompt: str) -> list[dict]:
             news = _crawler.validate_and_parse(snapshot.url).model_dump()
             news["id"] = _generate_news_id()
             news_list.append(news)
-        except Exception as exception:
-            print(exception)
+        except NewsExtractionError as exception: 
+            capture_exception(exception)
     return sorted(news_list, key=lambda x: x["time"], reverse=True)
 
 
 def toggle_upvote(news_id: int, user_id: int, database: Session) -> str:
+    does_news_exist = database.query(NewsArticle).filter(NewsArticle.id == news_id).first() is not None
+    if not does_news_exist:
+        raise NewsNotFoundError
     existing_upvote = database.execute(
         select(user_news_association_table).where(
             user_news_association_table.c.news_articles_id == news_id,

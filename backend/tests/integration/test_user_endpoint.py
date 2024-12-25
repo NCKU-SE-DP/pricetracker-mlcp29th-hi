@@ -68,6 +68,14 @@ def test_register_user():
     assert data["username"] == "newuser"
 
 
+def test_register_user_duplicated_username():
+    response = client.post("/api/v1/users/register", json={
+        "username": "newuser",
+        "password": "newpassword"
+    })
+    assert response.status_code == 422
+
+
 def test_login_for_access_token(test_user):
     response = client.post("/api/v1/users/login", data={
         "username": "testuser",
@@ -80,6 +88,14 @@ def test_login_for_access_token(test_user):
     assert data["token_type"] == "bearer"
 
 
+def test_login_for_access_token_invalid_credentials():
+    response = client.post("/api/v1/users/login", data={
+        "username": "invalid_user",
+        "password": "invalid_password"
+    })
+    assert response.status_code == 401
+
+
 def test_read_users_me(test_token):
     headers = {"Authorization": f"Bearer {test_token}"}
     response = client.get("/api/v1/users/me", headers=headers)
@@ -87,3 +103,10 @@ def test_read_users_me(test_token):
     assert response.status_code == 200
     data = response.json()
     assert data["username"] == "testuser"
+
+
+def test_read_users_me_invalid_access_token():
+    headers = {"Authorization": f"Bearer invalid_token"}
+    response = client.get("/api/v1/users/me", headers=headers)
+
+    assert response.status_code == 401
