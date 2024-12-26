@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import sentry_sdk
 from sentry_sdk.integrations.logging import ignore_logger
 
+from . import exception_handlers
 from .config import configuration
 from .crawler import exception_handlers as crawler_exception_handlers
 from .database import get_database, get_database_with_auto_persist_changes_disabled
@@ -18,8 +19,6 @@ from .news.router import router as news_api_router
 from .price.router import router as price_api_router
 from .user import exception_handlers as user_exception_handler
 from .user.router import router as user_api_router
-
-from . import exception_handlers
 
 
 ignore_logger("pricetracker")

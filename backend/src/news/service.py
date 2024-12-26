@@ -1,5 +1,4 @@
 import itertools
-from urllib.parse import quote
 
 from sentry_sdk import capture_exception
 from sqlalchemy import delete, insert, select

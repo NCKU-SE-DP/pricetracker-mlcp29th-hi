@@ -35,7 +35,6 @@ from bs4 import BeautifulSoup
 from pydantic import TypeAdapter
 import requests
 from requests import Response
-from sentry_sdk import capture_exception
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from urllib.parse import quote
