@@ -111,6 +111,12 @@ class TestLLMClientBase(unittest.TestCase):
             )
 
 
+    def test_singleton_pattern(self):
+        client1 = self.client_class()
+        client2 = self.client_class()
+        assert client1 is client2
+
+
 class TestOpenAIClient(TestLLMClientBase):
     __test__ = True
     client_class = OpenAIClient
