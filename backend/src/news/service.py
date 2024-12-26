@@ -5,7 +5,6 @@ from sentry_sdk import capture_exception
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
-from .config import configuration
 from .constants import AIModel
 from .exceptions import NewsNotFoundError
 from ..models import NewsArticle, User, user_news_association_table
