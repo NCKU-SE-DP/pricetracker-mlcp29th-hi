@@ -14,6 +14,7 @@ from ..llm_client.clients import AnthropicClient, OpenAIClient
 from ..llm_client.constants import RelevanceLevel
 from ..llm_client.schemas import NewsSummary
 from ..llm_client.template import LLMClientTemplate
+from ..logger import Logger
 
 
 _news_id_counter = itertools.count(start=1000000)
@@ -71,6 +72,7 @@ def search_news(prompt: str) -> list[dict]:
             news_list.append(news)
         except NewsExtractionError as exception: 
             capture_exception(exception)
+            Logger().log_error(exception)
     return sorted(news_list, key=lambda x: x["time"], reverse=True)
 
 
