@@ -1,13 +1,21 @@
-class AuthenticationError(Exception):
-    def __init__(self, message: str):
-        self.message = message
-        super().__init__(self.message)
+from typing import override
+
+from fastapi import status
+from fastapi.responses import PlainTextResponse
+
+from ..exception import AppError
 
 
-class RegistrationError(Exception):
-    def __init__(self, message: str):
-        self.message = message
-        super().__init__(self.message)
+class AuthenticationError(AppError):
+    @override
+    def generate_http_response(self) -> PlainTextResponse:
+        return PlainTextResponse(self.message, status_code=status.HTTP_401_UNAUTHORIZED)
+
+
+class RegistrationError(AppError):
+    @override
+    def generate_http_response(self) -> PlainTextResponse:
+        return PlainTextResponse(self.message, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
 class InvalidAccessTokenError(AuthenticationError):

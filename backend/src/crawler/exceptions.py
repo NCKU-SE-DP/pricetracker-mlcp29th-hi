@@ -1,4 +1,12 @@
-class DomainMismatchException(Exception):
+from typing import override
+
+from fastapi import status
+from fastapi.responses import PlainTextResponse
+
+from ..exception import AppError
+
+
+class DomainMismatchException(AppError):
     """Exception raised for URLs whose domain does not match the news website's domain."""
 
     def __init__(
@@ -9,9 +17,14 @@ class DomainMismatchException(Exception):
         self.url = url
         self.message = message
         super().__init__(self.message)
+    
+
+    @override
+    def generate_http_response(self) ->PlainTextResponse:
+        return PlainTextResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class NewsExtractionError(Exception):
-    def __init(self):
-        self.message = "Unable to extract the news from the html."
+    def __init__(self, url: str):
+        self.message = f"Unable to extract the news from the html ({url})."
         super().__init__(self.message)

@@ -1,21 +1,20 @@
 import itertools
-from urllib.parse import quote
 
 from sentry_sdk import capture_exception
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
-from .config import configuration
 from .constants import AIModel
 from .exceptions import NewsNotFoundError
 from ..models import NewsArticle, User, user_news_association_table
-from ..crawler.crawler_base import NewsSnapshot, NewsWithSummary
+from ..crawler.base import NewsSnapshot, NewsWithSummary
 from ..crawler.exceptions import NewsExtractionError
 from ..crawler.udn_crawler import UDNCrawler
 from ..llm_client.clients import AnthropicClient, OpenAIClient
 from ..llm_client.constants import RelevanceLevel
 from ..llm_client.schemas import NewsSummary
 from ..llm_client.template import LLMClientTemplate
+from ..logger import Logger
 
 
 _news_id_counter = itertools.count(start=1000000)
@@ -73,13 +72,14 @@ def search_news(prompt: str) -> list[dict]:
             news_list.append(news)
         except NewsExtractionError as exception: 
             capture_exception(exception)
+            Logger().log_error(exception)
     return sorted(news_list, key=lambda x: x["time"], reverse=True)
 
 
 def toggle_upvote(news_id: int, user_id: int, database: Session) -> str:
     does_news_exist = database.query(NewsArticle).filter(NewsArticle.id == news_id).first() is not None
     if not does_news_exist:
-        raise NewsNotFoundError
+        raise NewsNotFoundError(news_id)
     existing_upvote = database.execute(
         select(user_news_association_table).where(
             user_news_association_table.c.news_articles_id == news_id,

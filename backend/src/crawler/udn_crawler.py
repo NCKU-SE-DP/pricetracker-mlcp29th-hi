@@ -35,12 +35,11 @@ from bs4 import BeautifulSoup
 from pydantic import TypeAdapter
 import requests
 from requests import Response
-from sentry_sdk import capture_exception
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from urllib.parse import quote
 
-from .crawler_base import NewsCrawlerBase, NewsSnapshot, News, NewsWithSummary
+from .base import NewsCrawlerBase, NewsSnapshot, News, NewsWithSummary
 from .exceptions import NewsExtractionError
 from ..models import NewsArticle
 
@@ -123,7 +122,7 @@ class UDNCrawler(NewsCrawlerBase):
             content = " ".join(paragraphs)
             return News(title=title, url=url, time=time, content=content)
         except AttributeError as exception:
-            raise NewsExtractionError
+            raise NewsExtractionError(url)
 
     def _perform_request(self, url: str | None = None, params: dict | None = None) -> Response:
         return requests.get(url=url, params=params, timeout=self.timeout)

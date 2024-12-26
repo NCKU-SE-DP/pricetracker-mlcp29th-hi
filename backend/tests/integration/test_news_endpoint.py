@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
 import json
 from jose import jwt
-from src.crawler.crawler_base import NewsSnapshot
+from src.crawler.base import NewsSnapshot
 from src.database import get_database
 from src.main import app
 from src.models import Base, NewsArticle, User

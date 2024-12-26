@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 from pydantic import AnyHttpUrl
-from src.crawler.crawler_base import NewsCrawlerBase, News, NewsSnapshot
+from src.crawler.base import NewsCrawlerBase, News, NewsSnapshot
 from src.crawler.exceptions import DomainMismatchException
 
 
@@ -61,7 +61,7 @@ class TestNewsCrawlerBase(unittest.TestCase):
         self.assertEqual(news.time, "2023-09-08T00:00:00")
         self.assertEqual(news.content, "This is the content of the article.")
 
-    @patch('src.crawler.crawler_base.Session')
+    @patch('src.crawler.base.Session')
     def test_save(self, mock_db_session):
         news = News(
             title="Test Article",
