@@ -122,7 +122,7 @@ class UDNCrawler(NewsCrawlerBase):
             content = " ".join(paragraphs)
             return News(title=title, url=url, time=time, content=content)
         except AttributeError as exception:
-            raise NewsExtractionError
+            raise NewsExtractionError(url)
 
     def _perform_request(self, url: str | None = None, params: dict | None = None) -> Response:
         return requests.get(url=url, params=params, timeout=self.timeout)

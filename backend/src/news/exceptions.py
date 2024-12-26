@@ -7,8 +7,8 @@ from ..exception import AppError
 
 
 class NewsNotFoundError(AppError):
-    def __init__(self):
-        self.message = "News not found."
+    def __init__(self, news_id: int):
+        self.message = f"News with id '{news_id}' not found."
         super().__init__(self.message)
 
 

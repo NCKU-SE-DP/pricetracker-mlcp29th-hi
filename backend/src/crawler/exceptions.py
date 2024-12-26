@@ -25,6 +25,6 @@ class DomainMismatchException(AppError):
 
 
 class NewsExtractionError(Exception):
-    def __init__(self):
-        self.message = "Unable to extract the news from the html."
+    def __init__(self, url: str):
+        self.message = f"Unable to extract the news from the html ({url})."
         super().__init__(self.message)
