@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from .constants import AIModel
 from .exceptions import NewsNotFoundError
 from ..models import NewsArticle, User, user_news_association_table
-from ..crawler.crawler_base import NewsSnapshot, NewsWithSummary
+from ..crawler.base import NewsSnapshot, NewsWithSummary
 from ..crawler.exceptions import NewsExtractionError
 from ..crawler.udn_crawler import UDNCrawler
 from ..llm_client.clients import AnthropicClient, OpenAIClient

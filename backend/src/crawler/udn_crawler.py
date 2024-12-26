@@ -39,7 +39,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from urllib.parse import quote
 
-from .crawler_base import NewsCrawlerBase, NewsSnapshot, News, NewsWithSummary
+from .base import NewsCrawlerBase, NewsSnapshot, News, NewsWithSummary
 from .exceptions import NewsExtractionError
 from ..models import NewsArticle
 
